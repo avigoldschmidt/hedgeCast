@@ -34,15 +34,17 @@ cp .env.example .env
 Set `NESSIE_API_KEY` in `.env` if you want live bank movements. See [`.env.example`](.env.example) for the full list.
 
 ```bash
-make api    # FastAPI on :8000
-make web    # React on :5173 → http://localhost:5173
+make live    # fresh demo: reset DB + API + Vite
+make start   # resume: API + Vite, keep existing DB
 ```
 
-Offline mode with fakes (no API keys):
+Or separately: `make api` and `make web` in two terminals. Wipe only: `make reset-db`.
+
+Offline Plan B (fakes, no API keys):
 
 ```bash
-make demo
-make web
+make fake         # fresh: reset DB + fake API + Vite
+make start-fake   # resume fakes, keep DB
 ```
 
 Checks:
