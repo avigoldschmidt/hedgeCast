@@ -14,6 +14,9 @@ from hedgecast.main import create_app
 TODAY = date(2026, 10, 4)
 RAIN_TODAY = "KXRAIN-26OCT04-NYC"
 RAIN_TOMORROW = "KXRAIN-26OCT05-NYC"
+FED_EVENT = "KXFEDDECISION-26DEC"
+FED_CUT = "KXFEDDECISION-26DEC-C25"
+FED_HOLD = "KXFEDDECISION-26DEC-H0"
 
 
 class Clock:
@@ -47,14 +50,18 @@ def onboard(world, city_id="new-york-ny", link=True):
     return response.json()
 
 
-def get_quote(world, tickers=(RAIN_TODAY,), payout=100, peril="rain"):
-    response = world.client.post("/api/quotes", json={"peril": peril, "tickers": list(tickers), "payout_dollars": payout})
+def quote_body(tickers, payout, peril="rain", side="yes"):
+    return {"legs": [{"ticker": t, "side": side} for t in tickers], "payout_dollars": payout, "peril": peril}
+
+
+def get_quote(world, tickers=(RAIN_TODAY,), payout=100, peril="rain", side="yes"):
+    response = world.client.post("/api/quotes", json=quote_body(tickers, payout, peril, side))
     assert response.status_code == 200, response.text
     return response.json()
 
 
-def buy(world, tickers=(RAIN_TODAY,), payout=100, all_or_nothing=False):
-    quote = get_quote(world, tickers, payout)
+def buy(world, tickers=(RAIN_TODAY,), payout=100, all_or_nothing=False, peril="rain", side="yes"):
+    quote = get_quote(world, tickers, payout, peril, side)
     response = world.client.post("/api/policies", json={"quote_id": quote["id"], "all_or_nothing": all_or_nothing})
     assert response.status_code == 200, response.text
     return quote, response.json()

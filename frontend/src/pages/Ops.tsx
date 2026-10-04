@@ -2,12 +2,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Play } from 'lucide-react'
 import { Link } from 'react-router'
 import { api } from '@/api/client'
-import { ErrorNote, Loading, PerilIcon, Stat, StatusBadge } from '@/components/domain'
+import { CategoryIcon, ErrorNote, Loading, Stat, StatusBadge } from '@/components/domain'
 import { Logo } from '@/components/Logo'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/card'
-import { dateTime, dayLabel, money, timeAgo } from '@/lib/format'
+import { dateTime, money, shortDate, timeAgo } from '@/lib/format'
 
 export function Ops() {
   const queryClient = useQueryClient()
@@ -90,7 +90,7 @@ export function Ops() {
                       <tr>
                         <th className="pb-3 font-medium">Policy</th>
                         <th className="pb-3 font-medium">Business</th>
-                        <th className="pb-3 font-medium">Days</th>
+                        <th className="pb-3 font-medium">Settles by</th>
                         <th className="pb-3 text-right font-medium">Premium</th>
                         <th className="pb-3 text-right font-medium">Max payout</th>
                         <th className="pb-3 font-medium">Status</th>
@@ -104,7 +104,7 @@ export function Ops() {
                           <tr key={policy.id} className="border-t border-line align-middle">
                             <td className="py-3">
                               <div className="flex items-center gap-3">
-                                <PerilIcon peril={policy.peril} className="size-8 rounded-lg" />
+                                <CategoryIcon category={policy.category} className="size-8 rounded-lg" />
                                 <div>
                                   <div className="font-medium">#{policy.id} · {policy.title}</div>
                                   <div className="text-xs text-muted">
@@ -115,7 +115,7 @@ export function Ops() {
                               </div>
                             </td>
                             <td className="py-3">{policy.business_name}</td>
-                            <td className="py-3 text-muted">{policy.coverage_dates.map(dayLabel).join(', ')}</td>
+                            <td className="py-3 text-muted">{shortDate(policy.closes_at)}</td>
                             <td className="num py-3 text-right">{money(policy.premium_cents)}</td>
                             <td className="num py-3 text-right">{money(policy.max_payout_cents)}</td>
                             <td className="py-3">
@@ -138,7 +138,7 @@ export function Ops() {
                                     disabled={resolve.isPending}
                                     onClick={() => resolve.mutate({ id: policy.id, result: 'no' })}
                                   >
-                                    NO
+                                    Resolve                                     Resolve NO
                                   </Button>
                                 </span>
                               )}

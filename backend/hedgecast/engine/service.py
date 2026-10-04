@@ -4,10 +4,10 @@ import uuid
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
-from .. import config, geo
+from .. import config, weather
 from ..api import schemas as s
 from ..errors import ServiceError, bad_request, conflict, not_found, unavailable
-from ..integrations.market_data import MarketDataError
+from ..integrations.market_data import MarketDataError, MarketNotFound
 from ..integrations.money import BankError
 from . import catalog, pricing
 from .executors import HedgeError
@@ -16,6 +16,7 @@ from .settle import Settlement
 
 OPEN_STATUSES = ("ACTIVE", "AWAITING_RESULT")
 QUOTE_GRACE = timedelta(seconds=5)
+LIKELY = 0.75
 
 
 class Service:
@@ -35,46 +36,62 @@ class Service:
     # Reference data
 
     def cities(self):
-        return [s.City(id=c.id, name=c.name, state=c.state) for c in geo.CITIES]
+        return [s.City(id=c.id, name=c.name, state=c.state) for c in weather.CITIES]
 
     def perils(self):
-        return [s.Peril(id=key, **value) for key, value in catalog.PERILS.items()]
+        return [s.Peril(id=key, **value) for key, value in weather.PERILS.items()]
 
     # Businesses
 
     def list_businesses(self):
         return [
-            s.BusinessListItem(id=row["id"], name=row["name"], industry=row["industry"], city=self._city(row["city_id"]))
+            s.BusinessListItem(id=row["id"], name=row["name"], industry=row["industry"], city=_city(row["city_id"]))
             for row in self.db.list_businesses()
         ]
 
     def create_business(self, body):
-        if geo.city(body.city_id) is None:
+        if body.city_id and weather.city(body.city_id) is None:
             raise bad_request("Choose a city from the list.")
-        business_id = self.db.create_business(body.name.strip(), body.industry.strip(), body.city_id)
+        business_id = self.db.create_business(body.name.strip(), body.industry.strip(), body.city_id or None)
         return self.get_business(business_id)
 
-    def get_business(self, business_id, with_balance=True):
-        row = self._business_row(business_id)
-        return self._business(row, with_balance)
+    def get_business(self, business_id):
+        return self._business(self._business_row(business_id))
 
     def link_bank(self, business_id):
         row = self._business_row(business_id)
         if not row["bank_account_id"]:
-            place = geo.city(row["city_id"])
+            place = weather.city(row["city_id"]) if row["city_id"] else None
             try:
-                customer_id, account_id = self.bank.link(row["name"], place.name)
+                customer_id, account_id = self.bank.link(row["name"], place.name if place else "Main Street")
             except BankError as exc:
                 raise unavailable(f"Couldn't connect the bank: {exc}") from exc
             self.db.set_bank(business_id, customer_id, account_id)
         return self.get_business(business_id)
 
-    # Coverage and quotes
+    # Market discovery
 
-    def coverage_options(self, business_id, peril):
-        place = self._place(business_id)
-        station, km = geo.nearest_station(place, peril)
-        found = self._triggers(peril, station)
+    def search_markets(self, query, category):
+        try:
+            events = self.market_data.open_events()
+        except MarketDataError as exc:
+            raise unavailable(f"Kalshi markets are unavailable right now. {exc}") from exc
+        categories, cards = catalog.search(events, query, category, self.clock())
+        return s.MarketSearch(categories=categories, events=[s.EventCard(**card) for card in cards])
+
+    def event(self, event_ticker):
+        try:
+            event = self.market_data.event(event_ticker)
+        except MarketNotFound:
+            raise not_found("That event isn't on Kalshi.") from None
+        except MarketDataError as exc:
+            raise unavailable(f"Kalshi markets are unavailable right now. {exc}") from exc
+        return s.EventDetail(**catalog.event_detail(event, self.clock()))
+
+    # Optional weather shortcut
+
+    def weather_options(self, business_id, peril):
+        station, km, found = self._weather(self._business_row(business_id), peril)
         days = {}
         for trigger in found:
             days.setdefault(trigger["date"], []).append(
@@ -87,75 +104,74 @@ class Service:
         message = None
         if not days:
             message = f"No {peril} markets are open for {station.name} right now. Kalshi lists daily weather markets about a day ahead."
-        return s.CoverageOptions(
-            peril=self._peril(peril),
-            station=self._station(station, km),
+        return s.WeatherOptions(
+            peril=s.Peril(id=peril, **weather.PERILS[peril]),
+            station=_station(station, km),
             days=[s.CoverageDay(date=day, label=_day_label(day), triggers=items) for day, items in sorted(days.items())],
             message=message,
         )
 
+    def _weather(self, business, peril):
+        if not business["city_id"]:
+            raise conflict("Add your city to see local weather cover.")
+        station, km = weather.nearest_station(weather.city(business["city_id"]), peril)
+        try:
+            found = weather.triggers(self.market_data, peril, station, self.clock())
+        except MarketDataError as exc:
+            raise unavailable(f"Live market data is unavailable right now. {exc}") from exc
+        return station, km, found
+
+    # Quotes
+
     def quote(self, business_id, body):
         if body.payout_dollars > config.MAX_PAYOUT_DOLLARS:
-            raise bad_request(f"The most a day can pay is {dollars(config.MAX_PAYOUT_DOLLARS * 100)} for now.")
-        row = self._business_row(business_id)
-        place = geo.city(row["city_id"])
-        station, km = geo.nearest_station(place, body.peril)
-        available = {t["ticker"]: t for t in self._triggers(body.peril, station)}
-        chosen = []
-        for ticker in body.tickers:
-            if ticker not in available:
-                raise bad_request("One of those days is no longer open. Pick again.")
-            chosen.append(available[ticker])
-        if len({t["date"] for t in chosen}) != len(chosen):
-            raise bad_request("Pick one trigger per day.")
-        chosen.sort(key=lambda t: t["date"])
+            raise bad_request(f"The most a market can pay is {dollars(config.MAX_PAYOUT_DOLLARS * 100)} for now.")
+        if len({leg.ticker for leg in body.legs}) != len(body.legs):
+            raise bad_request("Each market can only be picked once.")
+        business = self._business_row(business_id)
 
-        contracts = body.payout_dollars
-        legs = []
-        for trigger in chosen:
-            try:
-                book = self.market_data.orderbook(trigger["ticker"])
-            except MarketDataError as exc:
-                raise unavailable(f"Live prices are unavailable right now. {exc}") from exc
-            priced = pricing.price_leg(book, contracts, self.max_price)
-            priced.update(
-                ticker=trigger["ticker"],
-                date=trigger["date"],
-                label=trigger["label"],
-                close_time=trigger["close_time"],
-                implied_probability=priced["implied_probability"]
-                if priced["implied_probability"] is not None
-                else (catalog.market_probability(trigger["market"]) or 0.0),
-            )
-            priced["cost_ceiling_cents"] = pricing.cost_ceiling_cents(priced, config.SLIPPAGE_BUFFER)
-            legs.append(priced)
+        station, weather_labels = None, {}
+        if body.peril:
+            found_station, km, found = self._weather(business, body.peril)
+            station = _station(found_station, km)
+            weather_labels = {t["ticker"]: f"{_day_label(t['date'])} · {t['label']}" for t in found}
+            if any(leg.ticker not in weather_labels for leg in body.legs):
+                raise bad_request("One of those days is no longer open. Pick again.")
+
+        legs, events = [], []
+        for request in body.legs:
+            market = self._bookable_market(request.ticker)
+            events.append(self._event_info(market["event_ticker"]))
+            legs.append(self._price(market, request.side, body.payout_dollars, weather_labels.get(request.ticker)))
+        legs.sort(key=lambda leg: leg["close_time"])
 
         premium_cents, breakdown = pricing.premium(legs, config.SLIPPAGE_BUFFER, config.PLATFORM_FEE, self.bank.unit_cents)
         max_fill = min(leg["depth_contracts"] for leg in legs)
-        short = max_fill < contracts
-        payout_cents = contracts * 100
-        station_model = self._station(station, km)
-        warnings = [
-            f"The market already puts {_day_label(leg['date'])} at {round(leg['implied_probability'] * 100)}%. "
-            "Cover costs close to what it pays."
-            for leg in legs
-            if leg["implied_probability"] >= 0.75
-        ]
+        payout_cents = body.payout_dollars * 100
+        if body.peril:
+            title = f"{weather.PERILS[body.peril]['name']} cover · {station.name}"
+            category = weather.CATEGORY
+        else:
+            title = _title(events)
+            category = events[0].get("category") or "Other"
+
         quote_id = uuid.uuid4().hex
         expires_at = (self.clock() + timedelta(seconds=config.QUOTE_TTL_SECONDS)).isoformat()
         quote = s.Quote(
             id=quote_id,
             expires_at=expires_at,
-            peril=self._peril(body.peril),
-            station=station_model,
-            payout_per_day_cents=payout_cents,
+            title=title,
+            category=category,
+            station=station,
+            payout_each_cents=payout_cents,
             max_payout_cents=payout_cents * len(legs),
             premium_cents=premium_cents,
             legs=[
                 s.QuoteLeg(
                     ticker=leg["ticker"],
-                    date=leg["date"],
+                    side=leg["side"],
                     label=leg["label"],
+                    close_time=leg["close_time"],
                     contracts=leg["contracts"],
                     avg_price=str(leg["avg_price"]),
                     cost_cents=leg["cost_cents"],
@@ -165,20 +181,60 @@ class Service:
                 for leg in legs
             ],
             breakdown=s.QuoteBreakdown(**breakdown),
-            terms=_terms(body.peril, station.name, payout_cents, legs),
-            warnings=warnings,
-            thin_book=s.ThinBook(short=short, max_payout_dollars=max_fill),
+            terms=_terms(payout_cents, legs, station),
+            warnings=[
+                f"The market already gives “{leg['label']}” a {round(leg['implied_probability'] * 100)}% chance. "
+                "Cover costs close to what it pays."
+                for leg in legs
+                if leg["implied_probability"] >= LIKELY
+            ],
+            thin_book=s.ThinBook(short=max_fill < body.payout_dollars, max_payout_dollars=max_fill),
         )
         payload = {
             "quote": quote.model_dump(),
             "legs": [
-                {key: leg[key] for key in ("ticker", "date", "label", "contracts", "close_time", "cost_ceiling_cents")}
+                {key: leg[key] for key in ("ticker", "side", "label", "contracts", "close_time", "cost_ceiling_cents")}
                 for leg in legs
             ],
-            "station_code": station.code,
         }
         self.db.save_quote(quote_id, business_id, payload, premium_cents, expires_at)
         return quote
+
+    def _bookable_market(self, ticker):
+        try:
+            market = self.market_data.market(ticker)
+        except MarketNotFound:
+            raise bad_request(f"{ticker} isn't a Kalshi market.") from None
+        except MarketDataError as exc:
+            raise unavailable(f"Live prices are unavailable right now. {exc}") from exc
+        if not catalog.is_bookable(market, self.clock()):
+            raise bad_request(f"{catalog.market_label(market)} has closed for trading. Pick again.")
+        return market
+
+    def _event_info(self, event_ticker):
+        try:
+            return self.market_data.event(event_ticker)
+        except MarketDataError:
+            return {"event_ticker": event_ticker, "title": event_ticker, "category": "Other"}
+
+    def _price(self, market, side, contracts, label=None):
+        try:
+            book = self.market_data.orderbook(market["ticker"])
+        except MarketDataError as exc:
+            raise unavailable(f"Live prices are unavailable right now. {exc}") from exc
+        leg = pricing.price_leg(book, side, contracts, self.max_price)
+        probability = leg["implied_probability"]
+        if probability is None:
+            probability = catalog.market_probability(market, side) or 0.0
+        leg.update(
+            ticker=market["ticker"],
+            side=side,
+            label=label or catalog.market_label(market),
+            close_time=catalog.parse_time(market["close_time"]).isoformat(),
+            implied_probability=probability,
+        )
+        leg["cost_ceiling_cents"] = pricing.cost_ceiling_cents(leg, config.SLIPPAGE_BUFFER)
+        return leg
 
     # Binding
 
@@ -201,13 +257,12 @@ class Service:
                     {
                         "business_id": business_id,
                         "quote_id": quote.id,
-                        "peril": quote.peril.id,
-                        "station_code": row["payload"]["station_code"],
-                        "station_name": quote.station.name,
-                        "basis_risk": quote.station.basis_risk,
-                        "title": f"{quote.peril.name} cover · {quote.station.name}",
+                        "category": quote.category,
+                        "station_name": quote.station.name if quote.station else None,
+                        "basis_risk": quote.station.basis_risk if quote.station else None,
+                        "title": quote.title,
                         "terms": quote.terms,
-                        "payout_per_day_cents": quote.payout_per_day_cents,
+                        "payout_each_cents": quote.payout_each_cents,
                         "max_payout_cents": quote.max_payout_cents,
                         "premium_cents": quote.premium_cents,
                     },
@@ -239,7 +294,7 @@ class Service:
             )
         how = "simulated against the live order book" if self.executor.simulated else "on Kalshi"
         self.db.add_event(policy_id, "hedged", f"Backing contracts bought {how}.")
-        self.db.transition(policy_id, ["PENDING"], "ACTIVE", "active", "Cover is active. We'll watch for the official result.")
+        self.db.transition(policy_id, ["PENDING"], "ACTIVE", "active", "Cover is active. We'll watch for Kalshi's official result.")
         return self.get_policy(business_id, policy_id)
 
     def _charge_premium(self, policy_id, business, cents):
@@ -260,8 +315,7 @@ class Service:
         return True
 
     def _unwind(self, policy_id, business, cents, error):
-        orphaned = getattr(error, "orphaned", [])
-        if orphaned:
+        if getattr(error, "orphaned", []):
             self.db.transition(
                 policy_id,
                 ["PENDING"],
@@ -302,13 +356,10 @@ class Service:
         business = self.get_business(business_id)
         rows = self.db.list_policies(business_id=business_id)
         summaries = [self._summary(row) for row in rows]
-        premiums = sum(
-            row["premium_cents"] for row in rows if row["status"] not in ("REFUNDED",)
-        )
         return s.Dashboard(
             business=business,
             active_coverage_cents=sum(p.max_payout_cents for p in summaries if p.status in OPEN_STATUSES),
-            premiums_paid_cents=premiums,
+            premiums_paid_cents=sum(row["premium_cents"] for row in rows if row["status"] != "REFUNDED"),
             payouts_received_cents=sum(p.paid_cents for p in summaries),
             policies=summaries,
             activity=[
@@ -366,65 +417,41 @@ class Service:
     def _business_row(self, business_id):
         row = self.db.get_business(business_id)
         if row is None:
-            raise ServiceError(404, "Business not found.")
+            raise not_found("Business not found.")
         return row
 
-    def _place(self, business_id):
-        return geo.city(self._business_row(business_id)["city_id"])
-
-    def _business(self, row, with_balance):
+    def _business(self, row):
         bank = s.BankLink(linked=bool(row["bank_account_id"]))
         if row["bank_account_id"]:
             bank.account_mask = row["bank_account_id"][-4:]
-            if with_balance:
-                try:
-                    account_id, cents = self.bank.balance_cents(row["bank_customer_id"], row["bank_account_id"])
-                    if account_id != row["bank_account_id"]:
-                        self.db.set_bank(row["id"], row["bank_customer_id"], account_id)
-                        bank.account_mask = account_id[-4:]
-                    bank.balance_cents = cents
-                except BankError as exc:
-                    bank.error = str(exc)
+            try:
+                account_id, cents = self.bank.balance_cents(row["bank_customer_id"], row["bank_account_id"])
+                if account_id != row["bank_account_id"]:
+                    self.db.set_bank(row["id"], row["bank_customer_id"], account_id)
+                    bank.account_mask = account_id[-4:]
+                bank.balance_cents = cents
+            except BankError as exc:
+                bank.error = str(exc)
         return s.Business(
             id=row["id"],
             name=row["name"],
             industry=row["industry"],
-            city=self._city(row["city_id"]),
+            city=_city(row["city_id"]),
             bank=bank,
             created_at=row["created_at"],
         )
-
-    @staticmethod
-    def _city(city_id):
-        place = geo.city(city_id)
-        return s.City(id=place.id, name=place.name, state=place.state)
-
-    @staticmethod
-    def _peril(peril):
-        return s.Peril(id=peril, **catalog.PERILS[peril])
-
-    @staticmethod
-    def _station(station, km):
-        risk = geo.basis_risk(km)
-        return s.Station(code=station.code, name=station.name, distance_km=round(km), basis_risk=risk, basis_note=geo.BASIS_NOTES[risk])
-
-    def _triggers(self, peril, station):
-        try:
-            return catalog.triggers(self.market_data, peril, station, self.clock())
-        except MarketDataError as exc:
-            raise unavailable(f"Live market data is unavailable right now. {exc}") from exc
 
     def _summary(self, row, legs=None):
         legs = legs if legs is not None else self.db.legs(row["id"])
         return s.PolicySummary(
             id=row["id"],
-            peril=row["peril"],
+            category=row["category"],
             title=row["title"],
             station_name=row["station_name"],
             basis_risk=row["basis_risk"],
             status=row["status"],
-            coverage_dates=[leg["date"] for leg in legs],
-            payout_per_day_cents=row["payout_per_day_cents"],
+            closes_at=max((leg["close_time"] for leg in legs), default=row["created_at"]),
+            payout_each_cents=row["payout_each_cents"],
             max_payout_cents=row["max_payout_cents"],
             premium_cents=row["premium_cents"],
             paid_cents=row["paid_cents"],
@@ -439,7 +466,7 @@ class Service:
             legs=[
                 s.PolicyLeg(
                     ticker=leg["ticker"],
-                    date=leg["date"],
+                    side=leg["side"],
                     label=leg["label"],
                     contracts=leg["contracts"],
                     fill_price=leg["fill_price"],
@@ -460,15 +487,32 @@ class Service:
         )
 
 
+def _city(city_id):
+    place = weather.city(city_id) if city_id else None
+    return s.City(id=place.id, name=place.name, state=place.state) if place else None
+
+
+def _station(station, km):
+    risk = weather.basis_risk(km)
+    return s.Station(code=station.code, name=station.name, distance_km=round(km), basis_risk=risk, basis_note=weather.BASIS_NOTES[risk])
+
+
 def _day_label(iso_day):
     return date.fromisoformat(iso_day).strftime("%a, %b %-d")
 
 
-def _terms(peril, station_name, payout_cents, legs):
-    days = "; ".join(f"{_day_label(leg['date'])}: {leg['label'].lower()}" for leg in legs)
-    unit = "each covered day" if len(legs) > 1 else "the covered day"
-    return (
-        f"HedgeCast pays {dollars(payout_cents)} into your checking account for {unit} that the official "
-        f"{station_name} reading shows the covered weather ({days}). No claim to file. "
-        "Payment goes out automatically once the result is official."
+def _title(events):
+    titles = list(dict.fromkeys(event.get("title") or event["event_ticker"] for event in events))
+    return titles[0] if len(titles) == 1 else f"{titles[0]} + {len(titles) - 1} more"
+
+
+def _terms(payout_cents, legs, station):
+    outcomes = "; ".join(f"“{leg['label']}” settles {leg['side'].upper()}" for leg in legs)
+    scope = "for each of these that goes your way" if len(legs) > 1 else "if this goes your way"
+    text = (
+        f"HedgeCast pays {dollars(payout_cents)} into your checking account {scope}, "
+        f"according to Kalshi's official result: {outcomes}. No claim to file. Payment goes out automatically."
     )
+    if station:
+        text += f" Weather is measured at the official {station.name} station."
+    return text

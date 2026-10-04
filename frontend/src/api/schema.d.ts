@@ -39,23 +39,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/coverage": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Coverage */
-        get: operations["coverage_api_coverage_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/dashboard": {
         parameters: {
             query?: never;
@@ -73,6 +56,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/events/{event_ticker}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Event */
+        get: operations["event_api_events__event_ticker__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health": {
         parameters: {
             query?: never;
@@ -82,6 +82,23 @@ export interface paths {
         };
         /** Health */
         get: operations["health_api_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/markets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Markets */
+        get: operations["markets_api_markets_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -262,6 +279,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/weather": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Weather */
+        get: operations["weather_api_weather_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -299,7 +333,7 @@ export interface components {
         /** Business */
         Business: {
             bank: components["schemas"]["BankLink"];
-            city: components["schemas"]["City"];
+            city?: components["schemas"]["City"] | null;
             /** Created At */
             created_at: string;
             /** Id */
@@ -311,7 +345,7 @@ export interface components {
         };
         /** BusinessListItem */
         BusinessListItem: {
-            city: components["schemas"]["City"];
+            city?: components["schemas"]["City"] | null;
             /** Id */
             id: number;
             /** Industry */
@@ -337,19 +371,10 @@ export interface components {
             /** Triggers */
             triggers: components["schemas"]["TriggerOption"][];
         };
-        /** CoverageOptions */
-        CoverageOptions: {
-            /** Days */
-            days: components["schemas"]["CoverageDay"][];
-            /** Message */
-            message?: string | null;
-            peril: components["schemas"]["Peril"];
-            station?: components["schemas"]["Station"] | null;
-        };
         /** CreateBusiness */
         CreateBusiness: {
             /** City Id */
-            city_id: string;
+            city_id?: string | null;
             /** Industry */
             industry: string;
             /** Name */
@@ -369,10 +394,71 @@ export interface components {
             /** Premiums Paid Cents */
             premiums_paid_cents: number;
         };
+        /** EventCard */
+        EventCard: {
+            /** Category */
+            category: string;
+            /** Closes At */
+            closes_at: string;
+            /** Event Ticker */
+            event_ticker: string;
+            /** Market Count */
+            market_count: number;
+            /** Markets */
+            markets: components["schemas"]["MarketOption"][];
+            /** Sub Title */
+            sub_title: string;
+            /** Title */
+            title: string;
+        };
+        /** EventDetail */
+        EventDetail: {
+            /** Category */
+            category: string;
+            /** Event Ticker */
+            event_ticker: string;
+            /** Markets */
+            markets: components["schemas"]["MarketOption"][];
+            /** Sub Title */
+            sub_title: string;
+            /** Title */
+            title: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** LegRequest */
+        LegRequest: {
+            /**
+             * Side
+             * @default yes
+             * @enum {string}
+             */
+            side: "yes" | "no";
+            /** Ticker */
+            ticker: string;
+        };
+        /** MarketOption */
+        MarketOption: {
+            /** Close Time */
+            close_time: string;
+            /** Outcome */
+            outcome: string;
+            /** Ticker */
+            ticker: string;
+            /** Title */
+            title: string;
+            /** Yes Probability */
+            yes_probability?: number | null;
+        };
+        /** MarketSearch */
+        MarketSearch: {
+            /** Categories */
+            categories: string[];
+            /** Events */
+            events: components["schemas"]["EventCard"][];
         };
         /** MoneyMovement */
         MoneyMovement: {
@@ -413,15 +499,14 @@ export interface components {
         };
         /** OpsPolicy */
         OpsPolicy: {
-            /**
-             * Basis Risk
-             * @enum {string}
-             */
-            basis_risk: "low" | "medium" | "high";
+            /** Basis Risk */
+            basis_risk?: ("low" | "medium" | "high") | null;
             /** Business Name */
             business_name: string;
-            /** Coverage Dates */
-            coverage_dates: string[];
+            /** Category */
+            category: string;
+            /** Closes At */
+            closes_at: string;
             /** Created At */
             created_at: string;
             /** Id */
@@ -430,19 +515,14 @@ export interface components {
             max_payout_cents: number;
             /** Paid Cents */
             paid_cents: number;
-            /** Payout Per Day Cents */
-            payout_per_day_cents: number;
-            /**
-             * Peril
-             * @enum {string}
-             */
-            peril: "rain" | "heat" | "cold";
+            /** Payout Each Cents */
+            payout_each_cents: number;
             /** Premium Cents */
             premium_cents: number;
             /** Simulated */
             simulated: boolean;
             /** Station Name */
-            station_name: string;
+            station_name?: string | null;
             /**
              * Status
              * @enum {string}
@@ -465,13 +545,12 @@ export interface components {
         };
         /** PolicyDetail */
         PolicyDetail: {
-            /**
-             * Basis Risk
-             * @enum {string}
-             */
-            basis_risk: "low" | "medium" | "high";
-            /** Coverage Dates */
-            coverage_dates: string[];
+            /** Basis Risk */
+            basis_risk?: ("low" | "medium" | "high") | null;
+            /** Category */
+            category: string;
+            /** Closes At */
+            closes_at: string;
             /** Created At */
             created_at: string;
             /** Events */
@@ -486,17 +565,12 @@ export interface components {
             movements: components["schemas"]["MoneyMovement"][];
             /** Paid Cents */
             paid_cents: number;
-            /** Payout Per Day Cents */
-            payout_per_day_cents: number;
-            /**
-             * Peril
-             * @enum {string}
-             */
-            peril: "rain" | "heat" | "cold";
+            /** Payout Each Cents */
+            payout_each_cents: number;
             /** Premium Cents */
             premium_cents: number;
             /** Station Name */
-            station_name: string;
+            station_name?: string | null;
             /**
              * Status
              * @enum {string}
@@ -524,14 +598,17 @@ export interface components {
             contracts: number;
             /** Cost Cents */
             cost_cents: number;
-            /** Date */
-            date: string;
             /** Fill Price */
             fill_price?: string | null;
             /** Label */
             label: string;
             /** Result */
             result?: string | null;
+            /**
+             * Side
+             * @enum {string}
+             */
+            side: "yes" | "no";
             /** Simulated */
             simulated: boolean;
             /** Ticker */
@@ -539,13 +616,12 @@ export interface components {
         };
         /** PolicySummary */
         PolicySummary: {
-            /**
-             * Basis Risk
-             * @enum {string}
-             */
-            basis_risk: "low" | "medium" | "high";
-            /** Coverage Dates */
-            coverage_dates: string[];
+            /** Basis Risk */
+            basis_risk?: ("low" | "medium" | "high") | null;
+            /** Category */
+            category: string;
+            /** Closes At */
+            closes_at: string;
             /** Created At */
             created_at: string;
             /** Id */
@@ -554,17 +630,12 @@ export interface components {
             max_payout_cents: number;
             /** Paid Cents */
             paid_cents: number;
-            /** Payout Per Day Cents */
-            payout_per_day_cents: number;
-            /**
-             * Peril
-             * @enum {string}
-             */
-            peril: "rain" | "heat" | "cold";
+            /** Payout Each Cents */
+            payout_each_cents: number;
             /** Premium Cents */
             premium_cents: number;
             /** Station Name */
-            station_name: string;
+            station_name?: string | null;
             /**
              * Status
              * @enum {string}
@@ -576,6 +647,8 @@ export interface components {
         /** Quote */
         Quote: {
             breakdown: components["schemas"]["QuoteBreakdown"];
+            /** Category */
+            category: string;
             /** Expires At */
             expires_at: string;
             /** Id */
@@ -584,15 +657,16 @@ export interface components {
             legs: components["schemas"]["QuoteLeg"][];
             /** Max Payout Cents */
             max_payout_cents: number;
-            /** Payout Per Day Cents */
-            payout_per_day_cents: number;
-            peril: components["schemas"]["Peril"];
+            /** Payout Each Cents */
+            payout_each_cents: number;
             /** Premium Cents */
             premium_cents: number;
-            station: components["schemas"]["Station"];
+            station?: components["schemas"]["Station"] | null;
             /** Terms */
             terms: string;
             thin_book: components["schemas"]["ThinBook"];
+            /** Title */
+            title: string;
             /** Warnings */
             warnings: string[];
         };
@@ -613,32 +687,34 @@ export interface components {
         QuoteLeg: {
             /** Avg Price */
             avg_price: string;
+            /** Close Time */
+            close_time: string;
             /** Contracts */
             contracts: number;
             /** Cost Cents */
             cost_cents: number;
-            /** Date */
-            date: string;
             /** Depth Contracts */
             depth_contracts: number;
             /** Implied Probability */
             implied_probability: number;
             /** Label */
             label: string;
+            /**
+             * Side
+             * @enum {string}
+             */
+            side: "yes" | "no";
             /** Ticker */
             ticker: string;
         };
         /** QuoteRequest */
         QuoteRequest: {
+            /** Legs */
+            legs: components["schemas"]["LegRequest"][];
             /** Payout Dollars */
             payout_dollars: number;
-            /**
-             * Peril
-             * @enum {string}
-             */
-            peril: "rain" | "heat" | "cold";
-            /** Tickers */
-            tickers: string[];
+            /** Peril */
+            peril?: ("rain" | "heat" | "cold") | null;
         };
         /** ResolveRequest */
         ResolveRequest: {
@@ -697,6 +773,15 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** WeatherOptions */
+        WeatherOptions: {
+            /** Days */
+            days: components["schemas"]["CoverageDay"][];
+            /** Message */
+            message?: string | null;
+            peril: components["schemas"]["Peril"];
+            station: components["schemas"]["Station"];
         };
         /** WorkerStatus */
         WorkerStatus: {
@@ -789,39 +874,6 @@ export interface operations {
             };
         };
     };
-    coverage_api_coverage_get: {
-        parameters: {
-            query: {
-                peril: "rain" | "heat" | "cold";
-            };
-            header?: never;
-            path?: never;
-            cookie?: {
-                hc_business?: string | null;
-            };
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CoverageOptions"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     dashboard_api_dashboard_get: {
         parameters: {
             query?: never;
@@ -853,6 +905,37 @@ export interface operations {
             };
         };
     };
+    event_api_events__event_ticker__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_ticker: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_api_health_get: {
         parameters: {
             query?: never;
@@ -869,6 +952,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    markets_api_markets_get: {
+        parameters: {
+            query?: {
+                q?: string;
+                category?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketSearch"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1213,6 +1328,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+        };
+    };
+    weather_api_weather_get: {
+        parameters: {
+            query: {
+                peril: "rain" | "heat" | "cold";
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                hc_business?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeatherOptions"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

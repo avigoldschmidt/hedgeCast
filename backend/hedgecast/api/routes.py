@@ -80,9 +80,19 @@ def dashboard(bid: int = Depends(business_id), svc=Depends(service)):
     return svc.dashboard(bid)
 
 
-@router.get("/coverage", response_model=s.CoverageOptions)
-def coverage(peril: s.PerilId, bid: int = Depends(business_id), svc=Depends(service)):
-    return svc.coverage_options(bid, peril)
+@router.get("/markets", response_model=s.MarketSearch)
+def markets(q: str = "", category: Optional[str] = None, svc=Depends(service)):
+    return svc.search_markets(q, category)
+
+
+@router.get("/events/{event_ticker}", response_model=s.EventDetail)
+def event(event_ticker: str, svc=Depends(service)):
+    return svc.event(event_ticker)
+
+
+@router.get("/weather", response_model=s.WeatherOptions)
+def weather(peril: s.PerilId, bid: int = Depends(business_id), svc=Depends(service)):
+    return svc.weather_options(bid, peril)
 
 
 @router.post("/quotes", response_model=s.Quote)

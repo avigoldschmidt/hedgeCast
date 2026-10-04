@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS businesses (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     industry TEXT NOT NULL,
-    city_id TEXT NOT NULL,
+    city_id TEXT,
     bank_customer_id TEXT,
     bank_account_id TEXT,
     created_at TEXT NOT NULL
@@ -33,13 +33,12 @@ CREATE TABLE IF NOT EXISTS policies (
     id INTEGER PRIMARY KEY,
     business_id INTEGER NOT NULL REFERENCES businesses(id),
     quote_id TEXT NOT NULL UNIQUE REFERENCES quotes(id),
-    peril TEXT NOT NULL,
-    station_code TEXT NOT NULL,
-    station_name TEXT NOT NULL,
-    basis_risk TEXT NOT NULL,
+    category TEXT NOT NULL,
+    station_name TEXT,
+    basis_risk TEXT,
     title TEXT NOT NULL,
     terms TEXT NOT NULL,
-    payout_per_day_cents INTEGER NOT NULL,
+    payout_each_cents INTEGER NOT NULL,
     max_payout_cents INTEGER NOT NULL,
     premium_cents INTEGER NOT NULL,
     paid_cents INTEGER NOT NULL DEFAULT 0,
@@ -54,7 +53,7 @@ CREATE TABLE IF NOT EXISTS policy_legs (
     id INTEGER PRIMARY KEY,
     policy_id INTEGER NOT NULL REFERENCES policies(id) ON DELETE CASCADE,
     ticker TEXT NOT NULL,
-    date TEXT NOT NULL,
+    side TEXT NOT NULL,
     label TEXT NOT NULL,
     contracts INTEGER NOT NULL,
     cost_ceiling_cents INTEGER NOT NULL,
@@ -99,12 +98,21 @@ def now_iso():
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
+SCHEMA_VERSION = 2
+DATA_TABLES = ("money_movements", "policy_events", "policy_legs", "policies", "quotes", "businesses")
+
+
 class Database:
     def __init__(self, path):
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as conn:
             conn.execute("PRAGMA journal_mode = WAL")
+            if conn.execute("PRAGMA user_version").fetchone()[0] != SCHEMA_VERSION:
+                # Hackathon-grade migration: rebuild data tables, keep settings (the Nessie reserve account).
+                for table in DATA_TABLES:
+                    conn.execute(f"DROP TABLE IF EXISTS {table}")
+                conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
             conn.executescript(SCHEMA)
 
     @contextmanager
@@ -180,20 +188,19 @@ class Database:
             cursor = conn.execute(
                 """
                 INSERT INTO policies (
-                    business_id, quote_id, peril, station_code, station_name, basis_risk, title, terms,
-                    payout_per_day_cents, max_payout_cents, premium_cents, status, created_at, updated_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?)
+                    business_id, quote_id, category, station_name, basis_risk, title, terms,
+                    payout_each_cents, max_payout_cents, premium_cents, status, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?)
                 """,
                 (
                     policy["business_id"],
                     policy["quote_id"],
-                    policy["peril"],
-                    policy["station_code"],
-                    policy["station_name"],
-                    policy["basis_risk"],
+                    policy["category"],
+                    policy.get("station_name"),
+                    policy.get("basis_risk"),
                     policy["title"],
                     policy["terms"],
-                    policy["payout_per_day_cents"],
+                    policy["payout_each_cents"],
                     policy["max_payout_cents"],
                     policy["premium_cents"],
                     stamp,
@@ -204,13 +211,13 @@ class Database:
             for leg in legs:
                 conn.execute(
                     """
-                    INSERT INTO policy_legs (policy_id, ticker, date, label, contracts, cost_ceiling_cents, close_time)
+                    INSERT INTO policy_legs (policy_id, ticker, side, label, contracts, cost_ceiling_cents, close_time)
                     VALUES (?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         policy_id,
                         leg["ticker"],
-                        leg["date"],
+                        leg["side"],
                         leg["label"],
                         leg["contracts"],
                         leg["cost_ceiling_cents"],
@@ -243,7 +250,7 @@ class Database:
         return self.all(sql + " ORDER BY id DESC", params)
 
     def legs(self, policy_id):
-        return self.all("SELECT * FROM policy_legs WHERE policy_id = ? ORDER BY date, id", (policy_id,))
+        return self.all("SELECT * FROM policy_legs WHERE policy_id = ? ORDER BY close_time, id", (policy_id,))
 
     def update_leg(self, leg_id, **fields):
         names = ", ".join(f"{name} = ?" for name in fields)

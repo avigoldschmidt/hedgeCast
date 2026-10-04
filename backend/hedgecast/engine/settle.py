@@ -38,7 +38,7 @@ class Settlement:
             for leg in self.db.legs(policy_id):
                 if leg["result"] is None:
                     self.db.update_leg(leg["id"], result=result, forced=1)
-            self.db.add_event(policy_id, "demo_resolve", f"Demo: market results set to {result.upper()} by the risk desk.")
+            self.db.add_event(policy_id, "demo_resolve", f"Demo: the risk desk settled the markets {result.upper()}.")
             self._advance(self.db.get_policy(policy_id), poll=False)
             return self.db.get_policy(policy_id)
 
@@ -57,7 +57,7 @@ class Settlement:
             if not all(leg["result"] or parse_time(leg["close_time"]) <= now for leg in legs):
                 return "waiting"
             self.db.transition(
-                policy["id"], ["ACTIVE"], "AWAITING_RESULT", "window_closed", "Coverage window closed. Waiting for the official result."
+                policy["id"], ["ACTIVE"], "AWAITING_RESULT", "window_closed", "Trading closed. Waiting for Kalshi's official result."
             )
         if any(leg["result"] is None for leg in legs):
             return "errors" if unreachable else "waiting"
@@ -66,9 +66,9 @@ class Settlement:
                 policy["id"], list(OPEN), "NEEDS_REVIEW", "voided", "A market was voided. The risk desk will refund or settle by hand."
             )
             return "errors"
-        owed = sum(leg["contracts"] * 100 for leg in legs if leg["result"] == "yes")
+        owed = sum(leg["contracts"] * 100 for leg in legs if leg["result"] == leg["side"])
         if owed == 0:
-            self.db.transition(policy["id"], list(OPEN), "EXPIRED", "expired", "No covered weather happened. The cover has expired.")
+            self.db.transition(policy["id"], list(OPEN), "EXPIRED", "expired", "None of the covered outcomes happened. The cover has expired.")
             return "expired"
         return self._pay(policy, owed, now)
 
@@ -79,8 +79,8 @@ class Settlement:
             return
         self.db.update_leg(leg["id"], result=result if result in FINAL_RESULTS else "void")
         if result in FINAL_RESULTS:
-            verdict = "happened" if result == "yes" else "did not happen"
-            self.db.add_event(policy["id"], "result", f"Official result for {leg['date']}: {leg['label'].lower()} {verdict}.")
+            verdict = "your cover pays" if result == leg["side"] else "no payout for this one"
+            self.db.add_event(policy["id"], "result", f"Kalshi settled “{leg['label']}” {result.upper()}: {verdict}.")
 
     def _pay(self, policy, owed, now):
         key = f"payout:{policy['id']}"

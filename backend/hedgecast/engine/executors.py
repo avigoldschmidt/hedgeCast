@@ -4,7 +4,7 @@ import uuid
 from decimal import Decimal
 
 from ..integrations import kalshi
-from .pricing import ceil_cents, exchange_fee_cents, walk, yes_asks
+from .pricing import asks, ceil_cents, exchange_fee_cents, walk
 
 
 class HedgeError(Exception):
@@ -14,15 +14,15 @@ class HedgeError(Exception):
 
 
 def _plan(book, leg, max_price):
-    asks = yes_asks(book)
-    filled, cost = walk(asks, leg["contracts"], max_price)
+    offers = asks(book, leg["side"])
+    filled, cost = walk(offers, leg["contracts"], max_price)
     if filled < leg["contracts"]:
         raise HedgeError(f"Only {int(filled)} of {leg['contracts']} contracts were on offer for {leg['ticker']}.")
     avg = cost / Decimal(leg["contracts"])
     total = ceil_cents(cost) + exchange_fee_cents(leg["contracts"], avg)
     if total > leg["cost_ceiling_cents"]:
         raise HedgeError(f"The price for {leg['ticker']} moved past the quote.")
-    limit = max(price for price, _size in asks if price <= max_price)
+    limit = max(price for price, _size in offers if price <= max_price)
     return avg, total, limit
 
 
@@ -65,7 +65,7 @@ class LiveExecutor:
         for leg in legs:
             _avg, _total, limit = _plan(self.market_data.orderbook(leg["ticker"]), leg, self.max_price)
             try:
-                order = kalshi.buy_yes(leg["ticker"], leg["contracts"], f"{limit:.4f}")
+                order = kalshi.buy(leg["ticker"], leg["side"], leg["contracts"], f"{limit:.4f}")
             except (kalshi.ConfigError, kalshi.ApiError) as exc:
                 raise HedgeError(str(exc), orphaned=fills) from exc
             filled = Decimal(order["fill_count"] or "0")

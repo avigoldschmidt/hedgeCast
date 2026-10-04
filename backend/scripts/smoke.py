@@ -42,6 +42,22 @@ def reuse_reserve(service):
         service.db.set_setting(nessie.RESERVE_SETTING, row[0])
 
 
+def first_coverable_quote(client, events, tries=8):
+    """Quotes $5 of NO-side cover on the most traded markets until one has enough depth."""
+    candidates = [
+        market["ticker"]
+        for event in events
+        for market in event["markets"]
+        if market["yes_probability"] is not None and 0.2 <= market["yes_probability"] <= 0.8
+    ]
+    for ticker in candidates[:tries]:
+        response = client.post("/api/quotes", json={"legs": [{"ticker": ticker, "side": "no"}], "payout_dollars": 5})
+        if response.status_code == 200 and not response.json()["thin_book"]["short"]:
+            print(f"ok   quote $5 NO-side cover on {ticker}")
+            return response.json()
+    return None
+
+
 def main():
     service = build_service()
     reuse_reserve(service)
@@ -53,26 +69,25 @@ def main():
     opening = business["bank"]["balance_cents"]
     print(f"     checking balance ${opening / 100:,.2f}")
 
-    coverage = step("rain coverage from live Kalshi", client.get("/api/coverage", params={"peril": "rain"}))
-    if not coverage["days"]:
-        print(f"SKIP no open rain markets: {coverage['message']}")
-        return
-    day = coverage["days"][-1]
-    ticker = day["triggers"][0]["ticker"]
-    print(f"     {coverage['station']['name']} · {day['label']} · {ticker}")
+    weather = step("weather shortcut from live Kalshi", client.get("/api/weather", params={"peril": "rain"}))
+    print(f"     {weather['station']['name']} · {sum(len(d['triggers']) for d in weather['days'])} rain markets open")
 
-    quote = step("quote $5 per day", client.post("/api/quotes", json={"peril": "rain", "tickers": [ticker], "payout_dollars": 5}))
-    print(f"     premium ${quote['premium_cents'] / 100:,.2f}  breakdown {quote['breakdown']}")
-    if quote["thin_book"]["short"]:
-        print("SKIP the live book can't cover $5 right now")
+    search = step("search live Kalshi markets", client.get("/api/markets"))
+    print(f"     {len(search['events'])} events across {', '.join(search['categories'][:6])}…")
+    quote = first_coverable_quote(client, search["events"])
+    if quote is None:
+        print("SKIP no liquid market could cover $5 on the NO side right now")
         return
+    leg = quote["legs"][0]
+    print(f"     {quote['category']} · {leg['label']} · NO at {leg['avg_price']}")
+    print(f"     premium ${quote['premium_cents'] / 100:,.2f}  breakdown {quote['breakdown']}")
 
     policy = step("buy cover (paper hedge)", client.post("/api/policies", json={"quote_id": quote["id"]}))
     if policy["status"] != "ACTIVE":
         print(f"FAIL policy ended up {policy['status']}: {[e['message'] for e in policy['events']]}")
         sys.exit(1)
 
-    paid = step("demo resolve YES", client.post(f"/api/ops/policies/{policy['id']}/resolve", json={"result": "yes"}))
+    paid = step("demo resolve NO", client.post(f"/api/ops/policies/{policy['id']}/resolve", json={"result": "no"}))
     if paid["status"] != "PAID":
         print(f"FAIL expected PAID, got {paid['status']}: {[e['message'] for e in paid['events']]}")
         sys.exit(1)

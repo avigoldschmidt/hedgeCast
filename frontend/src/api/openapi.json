@@ -94,7 +94,14 @@
             "$ref": "#/components/schemas/BankLink"
           },
           "city": {
-            "$ref": "#/components/schemas/City"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/City"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "created_at": {
             "title": "Created At",
@@ -117,7 +124,6 @@
           "id",
           "name",
           "industry",
-          "city",
           "bank",
           "created_at"
         ],
@@ -127,7 +133,14 @@
       "BusinessListItem": {
         "properties": {
           "city": {
-            "$ref": "#/components/schemas/City"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/City"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "id": {
             "title": "Id",
@@ -145,8 +158,7 @@
         "required": [
           "id",
           "name",
-          "industry",
-          "city"
+          "industry"
         ],
         "title": "BusinessListItem",
         "type": "object"
@@ -200,16 +212,9 @@
         "title": "CoverageDay",
         "type": "object"
       },
-      "CoverageOptions": {
+      "CreateBusiness": {
         "properties": {
-          "days": {
-            "items": {
-              "$ref": "#/components/schemas/CoverageDay"
-            },
-            "title": "Days",
-            "type": "array"
-          },
-          "message": {
+          "city_id": {
             "anyOf": [
               {
                 "type": "string"
@@ -218,34 +223,7 @@
                 "type": "null"
               }
             ],
-            "title": "Message"
-          },
-          "peril": {
-            "$ref": "#/components/schemas/Peril"
-          },
-          "station": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Station"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "required": [
-          "peril",
-          "days"
-        ],
-        "title": "CoverageOptions",
-        "type": "object"
-      },
-      "CreateBusiness": {
-        "properties": {
-          "city_id": {
-            "title": "City Id",
-            "type": "string"
+            "title": "City Id"
           },
           "industry": {
             "maxLength": 80,
@@ -262,8 +240,7 @@
         },
         "required": [
           "name",
-          "industry",
-          "city_id"
+          "industry"
         ],
         "title": "CreateBusiness",
         "type": "object"
@@ -311,6 +288,88 @@
         "title": "Dashboard",
         "type": "object"
       },
+      "EventCard": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "closes_at": {
+            "title": "Closes At",
+            "type": "string"
+          },
+          "event_ticker": {
+            "title": "Event Ticker",
+            "type": "string"
+          },
+          "market_count": {
+            "title": "Market Count",
+            "type": "integer"
+          },
+          "markets": {
+            "items": {
+              "$ref": "#/components/schemas/MarketOption"
+            },
+            "title": "Markets",
+            "type": "array"
+          },
+          "sub_title": {
+            "title": "Sub Title",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_ticker",
+          "title",
+          "sub_title",
+          "category",
+          "market_count",
+          "closes_at",
+          "markets"
+        ],
+        "title": "EventCard",
+        "type": "object"
+      },
+      "EventDetail": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "event_ticker": {
+            "title": "Event Ticker",
+            "type": "string"
+          },
+          "markets": {
+            "items": {
+              "$ref": "#/components/schemas/MarketOption"
+            },
+            "title": "Markets",
+            "type": "array"
+          },
+          "sub_title": {
+            "title": "Sub Title",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_ticker",
+          "title",
+          "sub_title",
+          "category",
+          "markets"
+        ],
+        "title": "EventDetail",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -322,6 +381,91 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "LegRequest": {
+        "properties": {
+          "side": {
+            "default": "yes",
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "title": "Side",
+            "type": "string"
+          },
+          "ticker": {
+            "title": "Ticker",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticker"
+        ],
+        "title": "LegRequest",
+        "type": "object"
+      },
+      "MarketOption": {
+        "properties": {
+          "close_time": {
+            "title": "Close Time",
+            "type": "string"
+          },
+          "outcome": {
+            "title": "Outcome",
+            "type": "string"
+          },
+          "ticker": {
+            "title": "Ticker",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "yes_probability": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Yes Probability"
+          }
+        },
+        "required": [
+          "ticker",
+          "title",
+          "outcome",
+          "close_time"
+        ],
+        "title": "MarketOption",
+        "type": "object"
+      },
+      "MarketSearch": {
+        "properties": {
+          "categories": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Categories",
+            "type": "array"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/EventCard"
+            },
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "categories",
+          "events"
+        ],
+        "title": "MarketSearch",
         "type": "object"
       },
       "MoneyMovement": {
@@ -436,24 +580,32 @@
       "OpsPolicy": {
         "properties": {
           "basis_risk": {
-            "enum": [
-              "low",
-              "medium",
-              "high"
+            "anyOf": [
+              {
+                "enum": [
+                  "low",
+                  "medium",
+                  "high"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "title": "Basis Risk",
-            "type": "string"
+            "title": "Basis Risk"
           },
           "business_name": {
             "title": "Business Name",
             "type": "string"
           },
-          "coverage_dates": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Coverage Dates",
-            "type": "array"
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "closes_at": {
+            "title": "Closes At",
+            "type": "string"
           },
           "created_at": {
             "title": "Created At",
@@ -471,18 +623,9 @@
             "title": "Paid Cents",
             "type": "integer"
           },
-          "payout_per_day_cents": {
-            "title": "Payout Per Day Cents",
+          "payout_each_cents": {
+            "title": "Payout Each Cents",
             "type": "integer"
-          },
-          "peril": {
-            "enum": [
-              "rain",
-              "heat",
-              "cold"
-            ],
-            "title": "Peril",
-            "type": "string"
           },
           "premium_cents": {
             "title": "Premium Cents",
@@ -493,8 +636,15 @@
             "type": "boolean"
           },
           "station_name": {
-            "title": "Station Name",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Station Name"
           },
           "status": {
             "enum": [
@@ -516,13 +666,11 @@
         },
         "required": [
           "id",
-          "peril",
+          "category",
           "title",
-          "station_name",
-          "basis_risk",
           "status",
-          "coverage_dates",
-          "payout_per_day_cents",
+          "closes_at",
+          "payout_each_cents",
           "max_payout_cents",
           "premium_cents",
           "paid_cents",
@@ -564,20 +712,28 @@
       "PolicyDetail": {
         "properties": {
           "basis_risk": {
-            "enum": [
-              "low",
-              "medium",
-              "high"
+            "anyOf": [
+              {
+                "enum": [
+                  "low",
+                  "medium",
+                  "high"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "title": "Basis Risk",
+            "title": "Basis Risk"
+          },
+          "category": {
+            "title": "Category",
             "type": "string"
           },
-          "coverage_dates": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Coverage Dates",
-            "type": "array"
+          "closes_at": {
+            "title": "Closes At",
+            "type": "string"
           },
           "created_at": {
             "title": "Created At",
@@ -616,26 +772,24 @@
             "title": "Paid Cents",
             "type": "integer"
           },
-          "payout_per_day_cents": {
-            "title": "Payout Per Day Cents",
+          "payout_each_cents": {
+            "title": "Payout Each Cents",
             "type": "integer"
-          },
-          "peril": {
-            "enum": [
-              "rain",
-              "heat",
-              "cold"
-            ],
-            "title": "Peril",
-            "type": "string"
           },
           "premium_cents": {
             "title": "Premium Cents",
             "type": "integer"
           },
           "station_name": {
-            "title": "Station Name",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Station Name"
           },
           "status": {
             "enum": [
@@ -661,13 +815,11 @@
         },
         "required": [
           "id",
-          "peril",
+          "category",
           "title",
-          "station_name",
-          "basis_risk",
           "status",
-          "coverage_dates",
-          "payout_per_day_cents",
+          "closes_at",
+          "payout_each_cents",
           "max_payout_cents",
           "premium_cents",
           "paid_cents",
@@ -717,10 +869,6 @@
             "title": "Cost Cents",
             "type": "integer"
           },
-          "date": {
-            "title": "Date",
-            "type": "string"
-          },
           "fill_price": {
             "anyOf": [
               {
@@ -747,6 +895,14 @@
             ],
             "title": "Result"
           },
+          "side": {
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "title": "Side",
+            "type": "string"
+          },
           "simulated": {
             "title": "Simulated",
             "type": "boolean"
@@ -758,7 +914,7 @@
         },
         "required": [
           "ticker",
-          "date",
+          "side",
           "label",
           "contracts",
           "cost_cents",
@@ -771,20 +927,28 @@
       "PolicySummary": {
         "properties": {
           "basis_risk": {
-            "enum": [
-              "low",
-              "medium",
-              "high"
+            "anyOf": [
+              {
+                "enum": [
+                  "low",
+                  "medium",
+                  "high"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "title": "Basis Risk",
+            "title": "Basis Risk"
+          },
+          "category": {
+            "title": "Category",
             "type": "string"
           },
-          "coverage_dates": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Coverage Dates",
-            "type": "array"
+          "closes_at": {
+            "title": "Closes At",
+            "type": "string"
           },
           "created_at": {
             "title": "Created At",
@@ -802,26 +966,24 @@
             "title": "Paid Cents",
             "type": "integer"
           },
-          "payout_per_day_cents": {
-            "title": "Payout Per Day Cents",
+          "payout_each_cents": {
+            "title": "Payout Each Cents",
             "type": "integer"
-          },
-          "peril": {
-            "enum": [
-              "rain",
-              "heat",
-              "cold"
-            ],
-            "title": "Peril",
-            "type": "string"
           },
           "premium_cents": {
             "title": "Premium Cents",
             "type": "integer"
           },
           "station_name": {
-            "title": "Station Name",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Station Name"
           },
           "status": {
             "enum": [
@@ -843,13 +1005,11 @@
         },
         "required": [
           "id",
-          "peril",
+          "category",
           "title",
-          "station_name",
-          "basis_risk",
           "status",
-          "coverage_dates",
-          "payout_per_day_cents",
+          "closes_at",
+          "payout_each_cents",
           "max_payout_cents",
           "premium_cents",
           "paid_cents",
@@ -862,6 +1022,10 @@
         "properties": {
           "breakdown": {
             "$ref": "#/components/schemas/QuoteBreakdown"
+          },
+          "category": {
+            "title": "Category",
+            "type": "string"
           },
           "expires_at": {
             "title": "Expires At",
@@ -882,19 +1046,23 @@
             "title": "Max Payout Cents",
             "type": "integer"
           },
-          "payout_per_day_cents": {
-            "title": "Payout Per Day Cents",
+          "payout_each_cents": {
+            "title": "Payout Each Cents",
             "type": "integer"
-          },
-          "peril": {
-            "$ref": "#/components/schemas/Peril"
           },
           "premium_cents": {
             "title": "Premium Cents",
             "type": "integer"
           },
           "station": {
-            "$ref": "#/components/schemas/Station"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Station"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "terms": {
             "title": "Terms",
@@ -902,6 +1070,10 @@
           },
           "thin_book": {
             "$ref": "#/components/schemas/ThinBook"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
           },
           "warnings": {
             "items": {
@@ -914,9 +1086,9 @@
         "required": [
           "id",
           "expires_at",
-          "peril",
-          "station",
-          "payout_per_day_cents",
+          "title",
+          "category",
+          "payout_each_cents",
           "max_payout_cents",
           "premium_cents",
           "legs",
@@ -967,6 +1139,10 @@
             "title": "Avg Price",
             "type": "string"
           },
+          "close_time": {
+            "title": "Close Time",
+            "type": "string"
+          },
           "contracts": {
             "title": "Contracts",
             "type": "integer"
@@ -974,10 +1150,6 @@
           "cost_cents": {
             "title": "Cost Cents",
             "type": "integer"
-          },
-          "date": {
-            "title": "Date",
-            "type": "string"
           },
           "depth_contracts": {
             "title": "Depth Contracts",
@@ -991,6 +1163,14 @@
             "title": "Label",
             "type": "string"
           },
+          "side": {
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "title": "Side",
+            "type": "string"
+          },
           "ticker": {
             "title": "Ticker",
             "type": "string"
@@ -998,8 +1178,9 @@
         },
         "required": [
           "ticker",
-          "date",
+          "side",
           "label",
+          "close_time",
           "contracts",
           "avg_price",
           "cost_cents",
@@ -1011,33 +1192,39 @@
       },
       "QuoteRequest": {
         "properties": {
+          "legs": {
+            "items": {
+              "$ref": "#/components/schemas/LegRequest"
+            },
+            "maxItems": 5,
+            "minItems": 1,
+            "title": "Legs",
+            "type": "array"
+          },
           "payout_dollars": {
             "minimum": 1.0,
             "title": "Payout Dollars",
             "type": "integer"
           },
           "peril": {
-            "enum": [
-              "rain",
-              "heat",
-              "cold"
+            "anyOf": [
+              {
+                "enum": [
+                  "rain",
+                  "heat",
+                  "cold"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
             ],
-            "title": "Peril",
-            "type": "string"
-          },
-          "tickers": {
-            "items": {
-              "type": "string"
-            },
-            "maxItems": 5,
-            "minItems": 1,
-            "title": "Tickers",
-            "type": "array"
+            "title": "Peril"
           }
         },
         "required": [
-          "peril",
-          "tickers",
+          "legs",
           "payout_dollars"
         ],
         "title": "QuoteRequest",
@@ -1198,6 +1385,41 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "WeatherOptions": {
+        "properties": {
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/CoverageDay"
+            },
+            "title": "Days",
+            "type": "array"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "peril": {
+            "$ref": "#/components/schemas/Peril"
+          },
+          "station": {
+            "$ref": "#/components/schemas/Station"
+          }
+        },
+        "required": [
+          "peril",
+          "station",
+          "days"
+        ],
+        "title": "WeatherOptions",
+        "type": "object"
+      },
       "WorkerStatus": {
         "properties": {
           "enabled": {
@@ -1321,66 +1543,6 @@
         "summary": "Cities"
       }
     },
-    "/api/coverage": {
-      "get": {
-        "operationId": "coverage_api_coverage_get",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "peril",
-            "required": true,
-            "schema": {
-              "enum": [
-                "rain",
-                "heat",
-                "cold"
-              ],
-              "title": "Peril",
-              "type": "string"
-            }
-          },
-          {
-            "in": "cookie",
-            "name": "hc_business",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Hc Business"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CoverageOptions"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Coverage"
-      }
-    },
     "/api/dashboard": {
       "get": {
         "operationId": "dashboard_api_dashboard_get",
@@ -1427,6 +1589,45 @@
         "summary": "Dashboard"
       }
     },
+    "/api/events/{event_ticker}": {
+      "get": {
+        "operationId": "event_api_events__event_ticker__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "event_ticker",
+            "required": true,
+            "schema": {
+              "title": "Event Ticker",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Event"
+      }
+    },
     "/api/health": {
       "get": {
         "operationId": "health_api_health_get",
@@ -1441,6 +1642,62 @@
           }
         },
         "summary": "Health"
+      }
+    },
+    "/api/markets": {
+      "get": {
+        "operationId": "markets_api_markets_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "category",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketSearch"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Markets"
       }
     },
     "/api/me": {
@@ -1907,6 +2164,66 @@
           }
         },
         "summary": "Start Session"
+      }
+    },
+    "/api/weather": {
+      "get": {
+        "operationId": "weather_api_weather_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "peril",
+            "required": true,
+            "schema": {
+              "enum": [
+                "rain",
+                "heat",
+                "cold"
+              ],
+              "title": "Peril",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "hc_business",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hc Business"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeatherOptions"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Weather"
       }
     }
   }

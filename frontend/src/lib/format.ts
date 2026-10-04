@@ -27,6 +27,15 @@ export function dayLabel(isoDate: string) {
   })
 }
 
+export function shortDate(iso: string) {
+  const when = new Date(iso)
+  return when.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    ...(when.getFullYear() !== new Date().getFullYear() ? { year: 'numeric' } : {}),
+  })
+}
+
 export function timeAgo(iso: string) {
   const seconds = Math.round((Date.now() - new Date(iso).getTime()) / 1000)
   if (seconds < 45) return 'just now'

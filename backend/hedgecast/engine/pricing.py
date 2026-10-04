@@ -14,45 +14,54 @@ def round_up(cents, unit):
     return -(-cents // unit) * unit
 
 
-def yes_asks(orderbook):
-    """YES asks, cheapest first. Kalshi books list bids only, so a NO bid at p is a YES ask at 1 - p."""
-    asks = []
-    for price, size in orderbook.get("no_dollars") or []:
+def _book_side(side):
+    return "yes_dollars" if side == "yes" else "no_dollars"
+
+
+def _other(side):
+    return "no" if side == "yes" else "yes"
+
+
+def asks(orderbook, side):
+    """Asks for `side`, cheapest first. Kalshi books list bids only, so a bid on the other side at p is an ask at 1 - p."""
+    levels = []
+    for price, size in orderbook.get(_book_side(_other(side))) or []:
         ask = ONE - Decimal(str(price))
         quantity = Decimal(str(size))
         if ask > 0 and quantity > 0:
-            asks.append((ask, quantity))
-    asks.sort(key=lambda level: level[0])
-    return asks
+            levels.append((ask, quantity))
+    levels.sort(key=lambda level: level[0])
+    return levels
 
 
-def best_bid(orderbook):
-    bids = [Decimal(str(price)) for price, size in orderbook.get("yes_dollars") or [] if Decimal(str(size)) > 0]
+def best_bid(orderbook, side):
+    bids = [Decimal(str(price)) for price, size in orderbook.get(_book_side(side)) or [] if Decimal(str(size)) > 0]
     return max(bids) if bids else None
 
 
-def implied_probability(orderbook):
-    asks = yes_asks(orderbook)
-    bid = best_bid(orderbook)
-    if asks and bid is not None:
-        return float((asks[0][0] + bid) / 2)
-    if asks:
-        return float(asks[0][0])
+def implied_probability(orderbook, side="yes"):
+    """The market's odds that `side` wins: the mid of its best bid and ask."""
+    offers = asks(orderbook, side)
+    bid = best_bid(orderbook, side)
+    if offers and bid is not None:
+        return float((offers[0][0] + bid) / 2)
+    if offers:
+        return float(offers[0][0])
     if bid is not None:
         return float(bid)
     return None
 
 
-def depth(asks, max_price):
-    total = sum((size for price, size in asks if price <= max_price), Decimal("0"))
+def depth(offers, max_price):
+    total = sum((size for price, size in offers if price <= max_price), Decimal("0"))
     return int(total.to_integral_value(rounding=ROUND_FLOOR))
 
 
-def walk(asks, contracts, max_price):
-    """Buys up to `contracts` from the cheapest asks at or under max_price. Returns (filled, cost) as Decimals."""
+def walk(offers, contracts, max_price):
+    """Buys up to `contracts` from the cheapest offers at or under max_price. Returns (filled, cost) as Decimals."""
     remaining = Decimal(contracts)
     cost = Decimal("0")
-    for price, size in asks:
+    for price, size in offers:
         if price > max_price or remaining <= 0:
             break
         take = min(size, remaining)
@@ -67,11 +76,11 @@ def exchange_fee_cents(contracts, price):
     return ceil_cents(Decimal("0.07") * Decimal(contracts) * price * (ONE - price))
 
 
-def price_leg(orderbook, contracts, max_price):
-    """Prices `contracts` YES contracts. Anything the book can't cover is priced at max_price."""
-    asks = yes_asks(orderbook)
-    available = depth(asks, max_price)
-    filled, cost = walk(asks, contracts, max_price)
+def price_leg(orderbook, side, contracts, max_price):
+    """Prices `contracts` contracts on `side`. Anything the book can't cover is priced at max_price."""
+    offers = asks(orderbook, side)
+    available = depth(offers, max_price)
+    filled, cost = walk(offers, contracts, max_price)
     cost += (Decimal(contracts) - filled) * max_price
     avg = (cost / Decimal(contracts)) if contracts else Decimal("0")
     return {
@@ -80,7 +89,7 @@ def price_leg(orderbook, contracts, max_price):
         "cost_cents": ceil_cents(cost),
         "fee_cents": exchange_fee_cents(contracts, avg),
         "depth_contracts": available,
-        "implied_probability": implied_probability(orderbook),
+        "implied_probability": implied_probability(orderbook, side),
     }
 
 

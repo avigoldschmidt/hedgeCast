@@ -2,11 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowRight, ArrowUpRight, Landmark, Plus } from 'lucide-react'
 import { Link } from 'react-router'
 import { api, type S } from '@/api/client'
-import { ErrorNote, Loading, PageHeader, PerilIcon, Stat, StatusBadge } from '@/components/domain'
+import { CategoryIcon, ErrorNote, Loading, PageHeader, Stat, StatusBadge } from '@/components/domain'
 import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/variants'
-import { dayLabel, money, timeAgo } from '@/lib/format'
+import { money, shortDate, timeAgo } from '@/lib/format'
 import { OPEN_STATUSES } from '@/lib/status'
 
 export function Dashboard() {
@@ -132,10 +132,12 @@ export function PolicyRow({ policy }: { policy: S['PolicySummary'] }) {
   return (
     <li>
       <Link to={`/policies/${policy.id}`} className="group -mx-2 flex items-center gap-4 rounded-xl px-2 py-3.5 transition hover:bg-canvas">
-        <PerilIcon peril={policy.peril} />
+        <CategoryIcon category={policy.category} />
         <div className="min-w-0 flex-1">
           <div className="truncate font-medium text-ink">{policy.title}</div>
-          <div className="text-sm text-muted">{policy.coverage_dates.map(dayLabel).join(' · ')}</div>
+          <div className="text-sm text-muted">
+            {policy.category} · settles by {shortDate(policy.closes_at)}
+          </div>
         </div>
         <div className="hidden text-right sm:block">
           <div className="num font-semibold">{money(policy.status === 'PAID' ? policy.paid_cents : policy.max_payout_cents)}</div>
@@ -152,14 +154,16 @@ function EmptyCover() {
   return (
     <div className="flex flex-col items-center py-10 text-center">
       <div className="flex -space-x-2">
-        <PerilIcon peril="rain" className="ring-4 ring-surface" />
-        <PerilIcon peril="heat" className="ring-4 ring-surface" />
-        <PerilIcon peril="cold" className="ring-4 ring-surface" />
+        <CategoryIcon category="Economics" className="ring-4 ring-surface" />
+        <CategoryIcon category="Climate and Weather" className="ring-4 ring-surface" />
+        <CategoryIcon category="Financials" className="ring-4 ring-surface" />
       </div>
       <div className="mt-4 font-medium">No open protection</div>
-      <p className="mt-1 max-w-sm text-sm text-muted">Cover a rainy Saturday, a heat wave, or a cold snap in about a minute.</p>
+      <p className="mt-1 max-w-sm text-sm text-muted">
+        A rate hike, a tariff, a gas spike, a rainy Saturday. Cover the event that would cost you money in about a minute.
+      </p>
       <Link to="/protect" className={buttonVariants({ variant: 'outline', className: 'mt-5' })}>
-        Protect a day <ArrowRight className="size-4" />
+        Find a market <ArrowRight className="size-4" />
       </Link>
     </div>
   )

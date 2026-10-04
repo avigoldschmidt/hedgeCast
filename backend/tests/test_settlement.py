@@ -4,7 +4,7 @@ import time
 from fastapi.testclient import TestClient
 
 from hedgecast.main import create_app
-from support import RAIN_TODAY, RAIN_TOMORROW, buy, onboard
+from support import FED_HOLD, RAIN_TODAY, RAIN_TOMORROW, buy, onboard
 
 OPENING = 100000
 
@@ -56,6 +56,27 @@ def test_no_expires_without_paying(world):
     _quote, policy = buy(world)
     world.clock.advance(hours=18)
     world.market.settle(RAIN_TODAY, "no")
+    _settle(world)
+    assert _policy(world, policy["id"])["status"] == "EXPIRED"
+    assert _paid_to_customer(world) == 0
+
+
+def test_no_side_pays_when_the_market_settles_no(world):
+    onboard(world, city_id=None)
+    _quote, policy = buy(world, tickers=(FED_HOLD,), payout=100, peril=None, side="no")
+    world.clock.advance(days=31)
+    world.market.settle(FED_HOLD, "no")
+    _settle(world)
+    detail = _policy(world, policy["id"])
+    assert detail["status"] == "PAID"
+    assert _paid_to_customer(world) == 10000
+
+
+def test_no_side_expires_when_the_market_settles_yes(world):
+    onboard(world, city_id=None)
+    _quote, policy = buy(world, tickers=(FED_HOLD,), payout=100, peril=None, side="no")
+    world.clock.advance(days=31)
+    world.market.settle(FED_HOLD, "yes")
     _settle(world)
     assert _policy(world, policy["id"])["status"] == "EXPIRED"
     assert _paid_to_customer(world) == 0

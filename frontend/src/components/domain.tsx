@@ -1,6 +1,26 @@
-import { CloudRain, Snowflake, Sun, type LucideIcon } from 'lucide-react'
+import {
+  Bot,
+  Building2,
+  Check,
+  CloudRain,
+  CloudSun,
+  Cpu,
+  Film,
+  Globe,
+  HeartPulse,
+  Landmark,
+  LineChart,
+  Shield,
+  Snowflake,
+  Sun,
+  Trophy,
+  Truck,
+  Users,
+  Vote,
+  type LucideIcon,
+} from 'lucide-react'
 import type { ReactNode } from 'react'
-import type { PerilId, PolicyStatus, S } from '@/api/client'
+import type { PerilId, PolicyStatus, S, Side } from '@/api/client'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/format'
 
@@ -49,6 +69,50 @@ export function PerilIcon({ peril, className }: { peril: PerilId; className?: st
       <Icon className="size-5" strokeWidth={1.8} />
     </span>
   )
+}
+
+const CATEGORY_ICON: Record<string, [LucideIcon, string]> = {
+  Economics: [Landmark, 'bg-brand-soft text-brand'],
+  Financials: [LineChart, 'bg-good-soft text-good'],
+  Politics: [Landmark, 'bg-sky-soft text-sky'],
+  Elections: [Vote, 'bg-sky-soft text-sky'],
+  'Climate and Weather': [CloudSun, 'bg-sky-soft text-sky'],
+  Sports: [Trophy, 'bg-sun-soft text-sun'],
+  Entertainment: [Film, 'bg-sun-soft text-sun'],
+  'Science and Technology': [Cpu, 'bg-brand-soft text-brand'],
+  AI: [Bot, 'bg-brand-soft text-brand'],
+  Health: [HeartPulse, 'bg-bad-soft text-bad'],
+  World: [Globe, 'bg-sky-soft text-sky'],
+  Social: [Users, 'bg-sun-soft text-sun'],
+  Companies: [Building2, 'bg-good-soft text-good'],
+  Business: [Building2, 'bg-good-soft text-good'],
+  Transportation: [Truck, 'bg-brand-soft text-brand'],
+}
+
+export function CategoryIcon({ category, className }: { category: string; className?: string }) {
+  const [Icon, tint] = CATEGORY_ICON[category] ?? [Shield, 'bg-ink/5 text-ink-soft']
+  return (
+    <span className={cn('inline-flex size-10 shrink-0 items-center justify-center rounded-xl', tint, className)}>
+      <Icon className="size-5" strokeWidth={1.8} />
+    </span>
+  )
+}
+
+export function Checkbox({ checked }: { checked: boolean }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex size-4 shrink-0 items-center justify-center rounded border',
+        checked ? 'border-canvas bg-canvas text-ink' : 'border-line-strong',
+      )}
+    >
+      {checked && <Check className="size-3" />}
+    </span>
+  )
+}
+
+export function SideBadge({ side }: { side: Side }) {
+  return <Badge tone={side === 'yes' ? 'good' : 'bad'}>Pays if {side.toUpperCase()}</Badge>
 }
 
 export function Stat({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) {

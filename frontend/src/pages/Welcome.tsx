@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowRight, Building2, CheckCircle2, CloudRain, Landmark, ShieldCheck, Zap } from 'lucide-react'
+import { ArrowRight, Building2, CheckCircle2, Landmark, Search, ShieldCheck, Zap } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { api, type S } from '@/api/client'
@@ -23,9 +23,9 @@ const INDUSTRIES = [
 ]
 
 const PITCH = [
-  { icon: CloudRain, title: 'Pick the weather that hurts', body: 'Rain, heat, or a cold snap on the days that matter.' },
+  { icon: Search, title: 'Pick the event that hurts', body: 'A rate hike, a tariff, a gas spike, or a rainy Saturday.' },
   { icon: Zap, title: 'Priced live by the market', body: 'A real-time price, locked for 30 seconds, one click to buy.' },
-  { icon: ShieldCheck, title: 'Paid automatically', body: 'When the official reading confirms it, money lands in checking.' },
+  { icon: ShieldCheck, title: 'Paid automatically', body: 'When the official result confirms it, money lands in checking.' },
 ]
 
 export function Welcome() {
@@ -60,7 +60,7 @@ export function Welcome() {
     create.mutate({
       name: String(form.get('name') ?? ''),
       industry: String(form.get('industry') ?? ''),
-      city_id: String(form.get('city_id') ?? ''),
+      city_id: String(form.get('city_id') ?? '') || null,
     })
   }
 
@@ -83,11 +83,11 @@ export function Welcome() {
         </div>
         <div className="relative mt-auto max-w-lg">
           <h1 className="font-display text-5xl leading-[1.05] font-semibold tracking-tight">
-            Weather protection that pays out on its own.
+            Protection that pays out on its own.
           </h1>
           <p className="mt-5 text-lg text-canvas/70">
-            Parametric cover for small businesses. Choose the weather that costs you money, see a live price, and get paid
-            automatically when it happens.
+            Parametric cover for small businesses, backed by Kalshi markets. Choose the event that would cost you money, see a
+            live price, and get paid automatically when it happens.
           </p>
           <ul className="mt-10 space-y-5">
             {PITCH.map(({ icon: Icon, title, body }) => (
@@ -115,7 +115,7 @@ export function Welcome() {
           {step === 1 && (
             <>
               <h2 className="font-display mt-8 text-3xl font-semibold tracking-tight">Tell us about your business</h2>
-              <p className="mt-2 text-muted">We use your location to find the official weather station that settles your cover.</p>
+              <p className="mt-2 text-muted">A name and what you do is enough. Add a city if you want local weather cover too.</p>
               <form onSubmit={submit} className="mt-8 space-y-5">
                 <Field label="Business name">
                   <Input name="name" required maxLength={80} placeholder="Peach Stand Café" autoComplete="organization" />
@@ -130,11 +130,9 @@ export function Welcome() {
                     ))}
                   </Select>
                 </Field>
-                <Field label="City">
-                  <Select name="city_id" required defaultValue="">
-                    <option value="" disabled>
-                      {cities.isPending ? 'Loading cities…' : 'Choose your city'}
-                    </option>
+                <Field label="City (optional, for local weather cover)">
+                  <Select name="city_id" defaultValue="">
+                    <option value="">{cities.isPending ? 'Loading cities…' : 'Skip'}</option>
                     {cities.data?.map((city) => (
                       <option key={city.id} value={city.id}>
                         {city.name}, {city.state}
@@ -161,7 +159,8 @@ export function Welcome() {
                         <span className="flex-1">
                           <span className="block text-sm font-medium">{item.name}</span>
                           <span className="block text-xs text-muted">
-                            {item.industry} · {item.city.name}, {item.city.state}
+                            {item.industry}
+                            {item.city && ` · ${item.city.name}, ${item.city.state}`}
                           </span>
                         </span>
                         <ArrowRight className="size-4 text-muted" />

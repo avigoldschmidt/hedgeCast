@@ -133,17 +133,19 @@ def settled_result(market):
     return None
 
 
-def buy_yes(ticker, count, limit_price):
+def buy(ticker, side, count, limit_price):
+    """Buys `side` up to limit_price. Buying NO at p is placed as a YES ask at 1 - p, which opens the same position."""
     if not has_credentials():
         raise ConfigError(
             "Add KALSHI_API_KEY_ID and KALSHI_PRIVATE_KEY_PATH to .env to place an order."
         )
     client_order_id = str(uuid.uuid4())
+    price = Decimal(limit_price) if side == "yes" else 1 - Decimal(limit_price)
     body = {
         "ticker": ticker,
-        "side": "bid",
+        "side": "bid" if side == "yes" else "ask",
         "count": f"{Decimal(count):.2f}",
-        "price": f"{Decimal(limit_price):.4f}",
+        "price": f"{price:.4f}",
         "time_in_force": "good_till_canceled",
         "self_trade_prevention_type": "taker_at_cross",
         "client_order_id": client_order_id,

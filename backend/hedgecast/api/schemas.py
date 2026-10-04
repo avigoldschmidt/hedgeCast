@@ -3,21 +3,19 @@ from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 from typing_extensions import Literal
 
+Side = Literal["yes", "no"]
 PerilId = Literal["rain", "heat", "cold"]
 BasisRisk = Literal["low", "medium", "high"]
 PolicyStatus = Literal["PENDING", "ACTIVE", "AWAITING_RESULT", "PAID", "EXPIRED", "REFUNDED", "NEEDS_REVIEW"]
+
+
+# Businesses
 
 
 class City(BaseModel):
     id: str
     name: str
     state: str
-
-
-class Peril(BaseModel):
-    id: PerilId
-    name: str
-    description: str
 
 
 class BankLink(BaseModel):
@@ -31,7 +29,7 @@ class Business(BaseModel):
     id: int
     name: str
     industry: str
-    city: City
+    city: Optional[City] = None
     bank: BankLink
     created_at: str
 
@@ -40,17 +38,60 @@ class BusinessListItem(BaseModel):
     id: int
     name: str
     industry: str
-    city: City
+    city: Optional[City] = None
 
 
 class CreateBusiness(BaseModel):
     name: str = Field(min_length=1, max_length=80)
     industry: str = Field(min_length=1, max_length=80)
-    city_id: str
+    city_id: Optional[str] = None
 
 
 class SessionRequest(BaseModel):
     business_id: int
+
+
+# Market discovery
+
+
+class MarketOption(BaseModel):
+    ticker: str
+    title: str
+    outcome: str
+    yes_probability: Optional[float] = None
+    close_time: str
+
+
+class EventCard(BaseModel):
+    event_ticker: str
+    title: str
+    sub_title: str
+    category: str
+    market_count: int
+    closes_at: str
+    markets: List[MarketOption]
+
+
+class MarketSearch(BaseModel):
+    categories: List[str]
+    events: List[EventCard]
+
+
+class EventDetail(BaseModel):
+    event_ticker: str
+    title: str
+    sub_title: str
+    category: str
+    markets: List[MarketOption]
+
+
+# Optional weather shortcut
+
+
+class Peril(BaseModel):
+    id: PerilId
+    name: str
+    description: str
 
 
 class Station(BaseModel):
@@ -73,23 +114,32 @@ class CoverageDay(BaseModel):
     triggers: List[TriggerOption]
 
 
-class CoverageOptions(BaseModel):
+class WeatherOptions(BaseModel):
     peril: Peril
-    station: Optional[Station] = None
+    station: Station
     days: List[CoverageDay]
     message: Optional[str] = None
 
 
+# Quotes
+
+
+class LegRequest(BaseModel):
+    ticker: str
+    side: Side = "yes"
+
+
 class QuoteRequest(BaseModel):
-    peril: PerilId
-    tickers: List[str] = Field(min_length=1, max_length=5)
+    legs: List[LegRequest] = Field(min_length=1, max_length=5)
     payout_dollars: int = Field(ge=1)
+    peril: Optional[PerilId] = None
 
 
 class QuoteLeg(BaseModel):
     ticker: str
-    date: str
+    side: Side
     label: str
+    close_time: str
     contracts: int
     avg_price: str
     cost_cents: int
@@ -113,9 +163,10 @@ class ThinBook(BaseModel):
 class Quote(BaseModel):
     id: str
     expires_at: str
-    peril: Peril
-    station: Station
-    payout_per_day_cents: int
+    title: str
+    category: str
+    station: Optional[Station] = None
+    payout_each_cents: int
     max_payout_cents: int
     premium_cents: int
     legs: List[QuoteLeg]
@@ -128,6 +179,9 @@ class Quote(BaseModel):
 class BindRequest(BaseModel):
     quote_id: str
     all_or_nothing: bool = False
+
+
+# Policies
 
 
 class PolicyEvent(BaseModel):
@@ -146,7 +200,7 @@ class MoneyMovement(BaseModel):
 
 class PolicyLeg(BaseModel):
     ticker: str
-    date: str
+    side: Side
     label: str
     contracts: int
     fill_price: Optional[str] = None
@@ -158,13 +212,13 @@ class PolicyLeg(BaseModel):
 
 class PolicySummary(BaseModel):
     id: int
-    peril: PerilId
+    category: str
     title: str
-    station_name: str
-    basis_risk: BasisRisk
+    station_name: Optional[str] = None
+    basis_risk: Optional[BasisRisk] = None
     status: PolicyStatus
-    coverage_dates: List[str]
-    payout_per_day_cents: int
+    closes_at: str
+    payout_each_cents: int
     max_payout_cents: int
     premium_cents: int
     paid_cents: int
@@ -191,6 +245,9 @@ class Dashboard(BaseModel):
     payouts_received_cents: int
     policies: List[PolicySummary]
     activity: List[ActivityItem]
+
+
+# Risk desk
 
 
 class WorkerStatus(BaseModel):

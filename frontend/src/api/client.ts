@@ -2,6 +2,7 @@ import type { components } from './schema'
 
 export type S = components['schemas']
 export type PerilId = S['Peril']['id']
+export type Side = S['LegRequest']['side']
 export type PolicyStatus = S['PolicySummary']['status']
 
 export class ApiError extends Error {
@@ -44,7 +45,10 @@ export const api = {
   me: () => request<S['Business']>('GET', '/me'),
   linkBank: () => request<S['Business']>('POST', '/me/bank'),
   dashboard: () => request<S['Dashboard']>('GET', '/dashboard'),
-  coverage: (peril: PerilId) => request<S['CoverageOptions']>('GET', `/coverage?peril=${peril}`),
+  markets: (q: string, category: string | null) =>
+    request<S['MarketSearch']>('GET', `/markets?${new URLSearchParams({ q, ...(category ? { category } : {}) })}`),
+  event: (ticker: string) => request<S['EventDetail']>('GET', `/events/${encodeURIComponent(ticker)}`),
+  weather: (peril: PerilId) => request<S['WeatherOptions']>('GET', `/weather?peril=${peril}`),
   quote: (body: S['QuoteRequest']) => request<S['Quote']>('POST', '/quotes', body),
   bind: (body: S['BindRequest']) => request<S['PolicyDetail']>('POST', '/policies', body),
   policies: () => request<S['PolicySummary'][]>('GET', '/policies'),

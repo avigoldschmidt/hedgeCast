@@ -1,4 +1,4 @@
-from support import RAIN_TODAY, buy, get_quote, onboard
+from support import FED_HOLD, RAIN_TODAY, buy, get_quote, onboard
 
 OPENING = 100000
 
@@ -22,6 +22,17 @@ def test_happy_path_charges_once_and_hedges(world):
     assert [(m["kind"], m["status"]) for m in policy["movements"]] == [("premium", "done")]
     kinds = [e["kind"] for e in policy["events"]]
     assert kinds == ["created", "premium_charged", "hedged", "active"]
+
+
+def test_buy_any_market_on_the_no_side(world):
+    onboard(world, city_id=None)
+    quote, policy = buy(world, tickers=(FED_HOLD,), payout=200, peril=None, side="no")
+    assert policy["status"] == "ACTIVE"
+    assert policy["category"] == "Economics"
+    assert policy["station_name"] is None
+    leg = policy["legs"][0]
+    assert (leg["side"], leg["fill_price"], leg["contracts"]) == ("no", "0.4700", 200)
+    assert _checking(world) == OPENING - quote["premium_cents"]
 
 
 def test_bank_must_be_linked(world):

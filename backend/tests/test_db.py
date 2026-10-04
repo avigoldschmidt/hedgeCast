@@ -6,20 +6,17 @@ from hedgecast.db import Database
 
 POLICY = {
     "quote_id": "q-1",
-    "peril": "rain",
-    "station_code": "NYC",
-    "station_name": "New York City",
-    "basis_risk": "low",
-    "title": "Rain cover",
-    "terms": "Pays on rain.",
-    "payout_per_day_cents": 100000,
+    "category": "Economics",
+    "title": "Fed decision in December",
+    "terms": "Pays if the Fed holds.",
+    "payout_each_cents": 100000,
     "max_payout_cents": 100000,
     "premium_cents": 40000,
 }
 LEG = {
-    "ticker": "KXRAIN-26OCT04-NYC",
-    "date": "2026-10-04",
-    "label": "Any measurable rain",
+    "ticker": "KXFED-26DEC-H0",
+    "side": "no",
+    "label": "Will the Fed hold rates in December?",
     "contracts": 1000,
     "cost_ceiling_cents": 35000,
     "close_time": "2026-10-05T05:00:00+00:00",
@@ -89,3 +86,17 @@ def test_settings_round_trip(db):
     db.set_setting("reserve_account_id", "abc")
     db.set_setting("reserve_account_id", "def")
     assert db.get_setting("reserve_account_id") == "def"
+
+
+def test_old_schema_is_rebuilt_but_settings_survive(tmp_path):
+    path = tmp_path / "old.db"
+    conn = sqlite3.connect(path)
+    conn.executescript(
+        "CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);"
+        "INSERT INTO settings VALUES ('reserve_account_id', 'r-1');"
+        "CREATE TABLE policies (id INTEGER PRIMARY KEY, peril TEXT);"
+    )
+    conn.close()
+    db = Database(path)
+    assert db.get_setting("reserve_account_id") == "r-1"
+    assert "category" in {row["name"] for row in db.all("PRAGMA table_info(policies)")}

@@ -2,9 +2,9 @@ import { useQuery } from '@tanstack/react-query'
 import { ArrowDownLeft, ArrowLeft, ArrowUpRight, CheckCircle2, CircleDashed, PartyPopper, RotateCcw, XCircle } from 'lucide-react'
 import { Link, useLocation, useParams } from 'react-router'
 import { api, type S } from '@/api/client'
-import { BasisRiskBadge, ErrorNote, Loading, PerilIcon, Stat, StatusBadge } from '@/components/domain'
+import { BasisRiskBadge, CategoryIcon, ErrorNote, Loading, SideBadge, Stat, StatusBadge } from '@/components/domain'
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/card'
-import { cn, dateTime, dayLabel, money } from '@/lib/format'
+import { cn, dateTime, money } from '@/lib/format'
 import { OPEN_STATUSES } from '@/lib/status'
 
 export function PolicyPage() {
@@ -46,12 +46,14 @@ export function PolicyPage() {
       )}
 
       <div className="flex flex-wrap items-start gap-5">
-        <PerilIcon peril={p.peril} className="size-14 rounded-2xl" />
+        <CategoryIcon category={p.category} className="size-14 rounded-2xl" />
         <div className="flex-1">
           <h1 className="font-display text-3xl font-semibold tracking-tight">{p.title}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
             <StatusBadge status={p.status} />
             <span>Policy #{p.id}</span>
+            <span>·</span>
+            <span>{p.category}</span>
             <span>·</span>
             <span>Bought {dateTime(p.created_at)}</span>
           </div>
@@ -59,7 +61,7 @@ export function PolicyPage() {
       </div>
 
       <Card className="mt-8 grid grid-cols-2 gap-6 p-6 md:grid-cols-4">
-        <Stat label="Payout per day" value={money(p.payout_per_day_cents)} />
+        <Stat label={p.legs.length > 1 ? 'Payout per outcome' : 'Payout'} value={money(p.payout_each_cents)} />
         <Stat label="Maximum payout" value={money(p.max_payout_cents)} />
         <Stat label="Premium" value={money(p.premium_cents)} />
         <Stat label="Paid to you" value={<span className={p.paid_cents > 0 ? 'text-good' : ''}>{money(p.paid_cents)}</span>} />
@@ -70,18 +72,16 @@ export function PolicyPage() {
           <Card>
             <CardHeader>
               <CardTitle>What's covered</CardTitle>
-              <BasisRiskBadge risk={p.basis_risk} />
+              {p.basis_risk && <BasisRiskBadge risk={p.basis_risk} />}
             </CardHeader>
             <CardBody>
               <p className="leading-relaxed text-ink-soft">{p.terms}</p>
               <ul className="mt-5 divide-y divide-line rounded-xl border border-line">
                 {p.legs.map((leg) => (
-                  <li key={leg.ticker} className="flex items-center gap-3 px-4 py-3 text-sm">
-                    <LegResult result={leg.result} />
-                    <span className="flex-1">
-                      <span className="font-medium">{dayLabel(leg.date)}</span>
-                      <span className="text-muted"> · {leg.label}</span>
-                    </span>
+                  <li key={leg.ticker} className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm">
+                    <LegResult leg={leg} />
+                    <span className="min-w-0 flex-1 font-medium">{leg.label}</span>
+                    <SideBadge side={leg.side} />
                     <span className="text-muted">{legStatus(leg)}</span>
                   </li>
                 ))}
@@ -164,17 +164,17 @@ export function PolicyPage() {
   )
 }
 
-function LegResult({ result }: { result?: string | null }) {
-  if (result === 'yes') return <CheckCircle2 className="size-4 text-good" />
-  if (result === 'no') return <XCircle className="size-4 text-muted" />
-  if (result === 'void') return <RotateCcw className="size-4 text-sun" />
+function LegResult({ leg }: { leg: S['PolicyLeg'] }) {
+  if (leg.result === 'void') return <RotateCcw className="size-4 text-sun" />
+  if (leg.result === leg.side) return <CheckCircle2 className="size-4 text-good" />
+  if (leg.result) return <XCircle className="size-4 text-muted" />
   return <CircleDashed className="size-4 text-muted" />
 }
 
 function legStatus(leg: S['PolicyLeg']) {
-  if (leg.result === 'yes') return 'Happened · pays out'
-  if (leg.result === 'no') return "Didn't happen"
   if (leg.result === 'void') return 'Market voided'
+  if (leg.result === leg.side) return `Settled ${leg.result.toUpperCase()} · pays out`
+  if (leg.result) return `Settled ${leg.result.toUpperCase()} · no payout`
   if (new Date(leg.close_time).getTime() < Date.now()) return 'Waiting for official result'
   return `Watching until ${dateTime(leg.close_time)}`
 }

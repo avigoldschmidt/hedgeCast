@@ -3,11 +3,13 @@ import { Navigate, Route, Routes } from 'react-router'
 import { api } from '@/api/client'
 import { AppShell } from '@/components/AppShell'
 import { ErrorNote, Loading } from '@/components/domain'
+import { Browse } from '@/pages/Browse'
 import { Dashboard } from '@/pages/Dashboard'
+import { EventPage } from '@/pages/EventPage'
 import { Ops } from '@/pages/Ops'
 import { Policies } from '@/pages/Policies'
 import { PolicyPage } from '@/pages/PolicyPage'
-import { Protect } from '@/pages/Protect'
+import { Weather } from '@/pages/Weather'
 import { Welcome } from '@/pages/Welcome'
 
 function RequireBusiness() {
@@ -38,7 +40,9 @@ export default function App() {
       <Route path="/ops" element={<Ops />} />
       <Route element={<RequireBusiness />}>
         <Route index element={<Dashboard />} />
-        <Route path="/protect" element={<Protect />} />
+        <Route path="/protect" element={<Browse />} />
+        <Route path="/events/:ticker" element={<EventPage />} />
+        <Route path="/weather" element={<Weather />} />
         <Route path="/policies" element={<Policies />} />
         <Route path="/policies/:id" element={<PolicyPage />} />
       </Route>

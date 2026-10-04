@@ -49,7 +49,7 @@ export function AppShell({ business }: { business: S['Business'] }) {
             <div className="text-right leading-tight">
               <div className="text-sm font-medium text-ink">{business.name}</div>
               <div className="text-xs text-muted">
-                {business.city.name}, {business.city.state}
+                {business.city ? `${business.city.name}, ${business.city.state}` : business.industry}
               </div>
             </div>
             <button
@@ -66,7 +66,7 @@ export function AppShell({ business }: { business: S['Business'] }) {
         <Outlet />
       </main>
       <footer className="mx-auto flex max-w-6xl items-center justify-between border-t border-line px-6 py-6 text-xs text-muted">
-        <span>Prices and results from Kalshi weather markets. Bank movements via Capital One Nessie sandbox.</span>
+        <span>Prices and results from Kalshi. Bank movements via Capital One Nessie sandbox.</span>
         <Link to="/ops" className="hover:text-ink">
           Risk desk
         </Link>
