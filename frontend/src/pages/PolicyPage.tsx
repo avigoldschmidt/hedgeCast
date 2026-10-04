@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { ArrowDownLeft, ArrowLeft, ArrowUpRight, CheckCircle2, PartyPopper } from 'lucide-react'
+import { ArrowDownLeft, ArrowLeft, ArrowUpRight, CheckCircle2, ChevronDown, PartyPopper } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Link, useLocation, useParams } from 'react-router'
 import { api, type PolicyStatus, type S } from '@/api/client'
@@ -134,59 +134,75 @@ export function PolicyPage() {
         </CardBody>
       </Card>
 
-      <details className="mt-6 rounded-2xl border border-line bg-surface shadow-card">
-        <summary className="flex cursor-pointer list-none items-center justify-between px-6 py-4 text-[15px] font-semibold">
-          Under the hood
-          <span className="text-xs font-normal text-muted">Exact terms, backing contracts, and history</span>
-        </summary>
-        <div className="space-y-5 border-t border-line px-6 py-5 text-sm">
-          <p className="leading-relaxed text-ink-soft">{p.terms}</p>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="text-left text-xs text-muted uppercase">
-                <tr>
-                  <th className="pb-2 font-medium">Market</th>
-                  <th className="pb-2 font-medium">Side</th>
-                  <th className="pb-2 text-right font-medium">Qty</th>
-                  <th className="pb-2 text-right font-medium">Limit</th>
-                  <th className="pb-2 text-right font-medium">Fill</th>
-                  <th className="pb-2 text-right font-medium">Fee</th>
-                  <th className="pb-2 font-medium">Order</th>
-                  <th className="pb-2 font-medium">Result</th>
-                </tr>
-              </thead>
-              <tbody className="num">
-                {p.legs.map((leg) => (
-                  <tr key={leg.ticker} className="border-t border-line">
-                    <td className="py-2 pr-3">
-                      <div className="font-sans">{leg.label}</div>
-                      <div className="font-mono text-xs text-muted">{leg.ticker}</div>
-                    </td>
-                    <td className="py-2 uppercase">{leg.side}</td>
-                    <td className="py-2 text-right">{leg.contracts.toLocaleString()}</td>
-                    <td className="py-2 text-right">{contractCents(leg.limit_price)}</td>
-                    <td className="py-2 text-right">{contractCents(leg.fill_price)}</td>
-                    <td className="py-2 text-right">{leg.fee_cents ? money(leg.fee_cents) : '—'}</td>
-                    <td className="py-2">
-                      <div className="font-mono text-xs">{leg.order_id ?? '—'}</div>
-                      {leg.simulated && leg.order_id && (
-                        <div className="font-sans text-[11px] text-muted">Paper · live book</div>
-                      )}
-                    </td>
-                    <td className="py-2 uppercase">{leg.result ?? '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <details className="group mt-6 rounded-2xl border border-line bg-surface shadow-card">
+        <summary className="flex cursor-pointer list-none items-center gap-4 px-6 py-5 [&::-webkit-details-marker]:hidden">
+          <div className="min-w-0 flex-1">
+            <div className="text-[15px] font-semibold">Under the hood</div>
+            <p className="mt-0.5 text-sm text-muted">Exact terms, backing contracts, and history</p>
           </div>
-          <ol className="space-y-2 border-t border-line pt-4">
-            {p.events.map((event, index) => (
-              <li key={index} className="flex gap-3">
-                <span className="w-32 shrink-0 text-xs text-muted">{dateTime(event.created_at)}</span>
-                <span className="text-ink-soft">{event.message}</span>
-              </li>
-            ))}
-          </ol>
+          <ChevronDown className="size-4 shrink-0 text-muted transition group-open:rotate-180" />
+        </summary>
+        <div className="space-y-6 border-t border-line px-6 py-5 text-sm">
+          <p className="leading-relaxed text-ink-soft">{p.terms}</p>
+
+          <div>
+            <div className="mb-2.5 text-xs font-semibold tracking-wide text-muted uppercase">
+              Backing {multi ? 'contracts' : 'contract'}
+            </div>
+            <ul className="space-y-3">
+              {p.legs.map((leg) => (
+                <li key={leg.ticker} className="rounded-xl bg-canvas px-4 py-3.5">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-medium text-ink">{leg.label}</div>
+                      <div className="mt-0.5 font-mono text-xs text-muted">{leg.ticker}</div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <span className="rounded-md bg-surface px-2 py-0.5 font-medium uppercase text-ink-soft">
+                        {leg.side}
+                      </span>
+                      {leg.result && (
+                        <span className="rounded-md bg-surface px-2 py-0.5 font-medium uppercase text-ink-soft">
+                          {leg.result}
+                        </span>
+                      )}
+                      {leg.simulated && leg.order_id && (
+                        <span className="rounded-md bg-sky-soft px-2 py-0.5 font-medium text-sky">Paper · live book</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2.5 sm:grid-cols-4">
+                    <HoodField label="Contracts" value={leg.contracts.toLocaleString()} />
+                    <HoodField label="Limit" value={contractCents(leg.limit_price)} />
+                    <HoodField label="Fill" value={contractCents(leg.fill_price)} />
+                    <HoodField label="Fee" value={leg.fee_cents ? money(leg.fee_cents) : '—'} />
+                    <HoodField
+                      label="Order"
+                      value={<span className="font-mono text-xs">{leg.order_id ?? '—'}</span>}
+                      className="col-span-2 sm:col-span-4"
+                    />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {p.events.length > 0 && (
+            <div>
+              <div className="mb-2.5 text-xs font-semibold tracking-wide text-muted uppercase">History</div>
+              <ol className="space-y-3">
+                {p.events.map((event, index) => (
+                  <li key={index} className="flex gap-3">
+                    <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-line-strong" />
+                    <div className="min-w-0">
+                      <div className="text-ink-soft">{event.message}</div>
+                      <div className="mt-0.5 text-xs text-muted">{dateTime(event.created_at)}</div>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
         </div>
       </details>
     </div>
@@ -222,6 +238,15 @@ function Figure({ label, value }: { label: string; value: ReactNode }) {
     <div>
       <div className="text-xs text-muted">{label}</div>
       <div className="num mt-0.5 text-xl font-semibold">{value}</div>
+    </div>
+  )
+}
+
+function HoodField({ label, value, className }: { label: string; value: ReactNode; className?: string }) {
+  return (
+    <div className={className}>
+      <div className="text-[11px] text-muted">{label}</div>
+      <div className="num mt-0.5 text-ink">{value}</div>
     </div>
   )
 }
