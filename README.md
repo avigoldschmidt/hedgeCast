@@ -1,82 +1,67 @@
 # HedgeCast
 
-Parametric cover for small businesses: pick a risk in plain English, get a live price from Kalshi prediction markets, pay the premium from checking, and get paid automatically when the official result hits — no claim form.
+Parametric cover for small businesses. Pick a risk in plain English, pay from checking, and get paid automatically when the official result hits. No claim form.
 
-**Stack:** React (Vite) + FastAPI · Kalshi market data · Capital One Nessie for bank movements · paper hedges against the live book by default.
+Small businesses lose money to weather, fuel spikes, rate changes, and similar shocks. Traditional insurance is slow and claim-heavy. Kalshi already prices a lot of these risks, but the interface is built for traders.
 
-## What makes it special
+HedgeCast is the middle layer: describe the risk in normal language, buy cover priced off live markets, pay from a bank account, and get paid when the official result comes in.
 
-| Status quo | HedgeCast |
-|---|---|
-| Business interruption insurance | Slow, opaque, claims adjusters |
-| Trading Kalshi yourself | Needs market literacy; no SME packaging or bank payout UX |
-| Generic “risk dashboards” | No real price, no money movement |
+## What it does
 
-HedgeCast is the **distribution layer**: SME language → Kalshi hedge → Capital One money movement → parametric payout.
+1. Create a business profile with name, industry, and city.
+2. Pick a kind of cover: weather, rates, fuel, prices, tariffs, sports, jobs, or something else.
+3. Narrow it to a specific market. Example path: Weather → Rain → a day with a live probability.
+4. Choose a cover amount, connect checking, pay the premium, and activate cover.
+5. When the market settles, the payout lands in checking. You can see it in the balance and the money ledger.
+
+The same flow works across topics, not only weather.
+
+## Stack
+
+- **Frontend:** React, TypeScript, Vite, Tailwind CSS, TanStack Query
+- **Backend:** FastAPI, Python, Pydantic, SQLite
+- **Markets:** Kalshi for live prices and settlement results
+- **Banking:** Capital One Nessie for premiums and payouts
 
 ## Run
 
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 cd frontend && npm install && cd ..
-cp .env.example .env   # set NESSIE_API_KEY for live bank
+cp .env.example .env
 ```
 
-**Primary (live Kalshi prices + Nessie, paper hedges):**
+Set `NESSIE_API_KEY` in `.env` if you want live bank movements. See [`.env.example`](.env.example) for the full list.
 
 ```bash
-make api    # FastAPI :8000
-make web    # React :5173 → http://localhost:5173
+make api    # FastAPI on :8000
+make web    # React on :5173 → http://localhost:5173
 ```
 
-**Backup (offline fakes, no keys):**
+Offline mode with fakes (no API keys):
 
 ```bash
 make demo
 make web
 ```
 
-**Verify:**
+Checks:
 
 ```bash
-make check   # pytest + tsc + lint
-make e2e     # Playwright happy path (fakes)
-make smoke   # real Nessie + live Kalshi prices, paper hedge
+make check   # pytest + TypeScript + lint
+make e2e     # Playwright happy path
+make smoke   # live Kalshi prices + Nessie
 ```
 
-See [`.env.example`](.env.example) for `HEDGE_MODE`, Kalshi keys (live hedges only), and `HEDGECAST_FAKES`.
+## Try the main path
 
-## 3-minute demo script
-
-One path. Narrate the numbers.
-
-| Time | Screen | Do | Say |
-|------|--------|----|-----|
-| 0:00–0:20 | `/welcome` | Peach Stand Café · Café · New York → **Find cover** | Patio café. Rain kills sales. Insurance won’t pay that fast — we will. |
-| 0:20–1:10 | Plan | **Weather → Rain → pick a day with % → Continue** | Live Kalshi market, wrapped in English. |
-| 1:10–1:50 | Price | **$300** → **Connect checking** (~$1,000) → **Protect** | Premium leaves checking. Cover is live. |
-| 1:50–2:40 | `/ops` → policy | Pre-open Settlement in a second tab → **Settle YES** → back to policy | Normally Kalshi posts the result and our worker pays; we’re firing that settle now. **+$300, no claim.** |
-| 2:40–3:00 | Policy / header | Linger on paid banner + checking balance + Money ledger | Same rails for rates, fuel, tariffs. |
-
-**Skip on stage:** second topics, Under the hood, thin-book panel, Settle NO on rain cover, large payout presets.
-
-**If weather markets are empty:** pivot to Interest rates → Fed (buy only), or restart with `make demo`.
-
-### Judge honesty (if asked)
-
-Prices and results come from Kalshi. Hedges are paper fills against the live order book (exchange demo account can’t be funded). Bank movements use the Capital One Nessie sandbox.
-
-## Day-of checklist
-
-1. `.env`: `NESSIE_API_KEY`, `HEDGE_MODE=paper`, `HEDGECAST_FAKES=0`
-2. `make api` + `make web`; dry-run the rain → $300 → protect → Settle YES path once
-3. Note starting checking, premium, and expected post-payout balance
-4. Pre-open `/ops` in a second tab
-5. Keep a terminal ready for `make demo` if live APIs flake
-6. Rehearse under 2:45
+1. Open `/welcome` and create a business (for example Peach Stand Café, Café, New York).
+2. Choose Weather → Rain → pick a day → Continue.
+3. Set cover to $300, connect checking, and Protect.
+4. After settlement, open the policy page and check the balance and money ledger.
 
 ## Project layout
 
-- [`frontend/`](frontend/) — React app (`/welcome`, plan wizard, policies, `/ops`)
-- [`backend/hedgecast/`](backend/hedgecast/) — FastAPI engine, Kalshi + Nessie integrations
+- [`frontend/`](frontend/) — React app (onboarding, plan wizard, policies)
+- [`backend/hedgecast/`](backend/hedgecast/) — FastAPI engine, Kalshi and Nessie integrations
 - [`Makefile`](Makefile) — `api`, `demo`, `web`, `check`, `e2e`, `smoke`
