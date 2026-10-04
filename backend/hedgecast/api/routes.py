@@ -35,9 +35,9 @@ def cities(svc=Depends(service)):
     return svc.cities()
 
 
-@router.get("/perils", response_model=List[s.Peril])
-def perils(svc=Depends(service)):
-    return svc.perils()
+@router.get("/topics", response_model=List[s.TopicInfo])
+def topic_list(svc=Depends(service)):
+    return svc.topic_list()
 
 
 @router.get("/businesses", response_model=List[s.BusinessListItem])
@@ -75,24 +75,19 @@ def link_bank(bid: int = Depends(business_id), svc=Depends(service)):
     return svc.link_bank(bid)
 
 
-@router.get("/dashboard", response_model=s.Dashboard)
-def dashboard(bid: int = Depends(business_id), svc=Depends(service)):
-    return svc.dashboard(bid)
+@router.put("/me/topics", response_model=s.Business)
+def set_topics(body: s.TopicsUpdate, bid: int = Depends(business_id), svc=Depends(service)):
+    return svc.set_topics(bid, body)
 
 
-@router.get("/markets", response_model=s.MarketSearch)
-def markets(q: str = "", category: Optional[str] = None, svc=Depends(service)):
-    return svc.search_markets(q, category)
+@router.get("/forecast", response_model=s.Forecast)
+def forecast(bid: int = Depends(business_id), svc=Depends(service)):
+    return svc.forecast(bid)
 
 
-@router.get("/events/{event_ticker}", response_model=s.EventDetail)
-def event(event_ticker: str, svc=Depends(service)):
-    return svc.event(event_ticker)
-
-
-@router.get("/weather", response_model=s.WeatherOptions)
-def weather(peril: s.PerilId, bid: int = Depends(business_id), svc=Depends(service)):
-    return svc.weather_options(bid, peril)
+@router.post("/ask", response_model=s.AskResult)
+def ask(body: s.AskRequest, bid: int = Depends(business_id), svc=Depends(service)):
+    return svc.ask(bid, body)
 
 
 @router.post("/quotes", response_model=s.Quote)

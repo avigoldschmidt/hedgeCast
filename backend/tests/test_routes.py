@@ -3,7 +3,8 @@ from support import onboard
 
 def test_reference_data(world):
     assert any(city["id"] == "ann-arbor-mi" for city in world.client.get("/api/cities").json())
-    assert [peril["id"] for peril in world.client.get("/api/perils").json()] == ["rain", "heat", "cold"]
+    topic_ids = [topic["id"] for topic in world.client.get("/api/topics").json()]
+    assert topic_ids == ["weather", "fuel", "rates", "prices", "tariffs", "sports", "jobs"]
 
 
 def test_sessions_switch_between_businesses(world):
@@ -22,7 +23,7 @@ def test_sessions_switch_between_businesses(world):
 
 def test_unknown_business_and_city(world):
     assert world.client.post("/api/session", json={"business_id": 999}).status_code == 404
-    bad = world.client.post("/api/businesses", json={"name": "X", "industry": "Y", "city_id": "atlantis"})
+    bad = world.client.post("/api/businesses", json={"name": "X", "description": "A shop", "city_id": "atlantis"})
     assert bad.status_code == 400
 
 

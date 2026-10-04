@@ -6,8 +6,7 @@ import { Logo } from '@/components/Logo'
 import { cn } from '@/lib/format'
 
 const NAV = [
-  { to: '/', label: 'Overview', end: true },
-  { to: '/protect', label: 'Get protection', end: false },
+  { to: '/', label: 'Forecast', end: true },
   { to: '/policies', label: 'Policies', end: false },
 ]
 
@@ -24,7 +23,7 @@ export function AppShell({ business }: { business: S['Business'] }) {
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 border-b border-line bg-canvas/85 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-6">
+        <div className="mx-auto flex h-16 max-w-5xl items-center gap-8 px-6">
           <Link to="/">
             <Logo />
           </Link>
@@ -62,10 +61,10 @@ export function AppShell({ business }: { business: S['Business'] }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-6 pt-10 pb-24">
+      <main className="mx-auto max-w-5xl px-6 pt-10 pb-24">
         <Outlet />
       </main>
-      <footer className="mx-auto flex max-w-6xl items-center justify-between border-t border-line px-6 py-6 text-xs text-muted">
+      <footer className="mx-auto flex max-w-5xl items-center justify-between border-t border-line px-6 py-6 text-xs text-muted">
         <span>Prices and results from Kalshi. Bank movements via Capital One Nessie sandbox.</span>
         <Link to="/ops" className="hover:text-ink">
           Risk desk

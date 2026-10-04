@@ -26,10 +26,9 @@ def test_happy_path_charges_once_and_hedges(world):
 
 def test_buy_any_market_on_the_no_side(world):
     onboard(world, city_id=None)
-    quote, policy = buy(world, tickers=(FED_HOLD,), payout=200, peril=None, side="no")
+    quote, policy = buy(world, tickers=(FED_HOLD,), payout=200, side="no")
     assert policy["status"] == "ACTIVE"
-    assert policy["category"] == "Economics"
-    assert policy["station_name"] is None
+    assert policy["topic"] == "rates"
     leg = policy["legs"][0]
     assert (leg["side"], leg["fill_price"], leg["contracts"]) == ("no", "0.4700", 200)
     assert _checking(world) == OPENING - quote["premium_cents"]
@@ -124,11 +123,10 @@ def test_all_or_nothing_refunds_if_the_book_stays_short(world):
     assert _checking(world) == OPENING
 
 
-def test_dashboard_totals(world):
+def test_policy_keeps_the_plan_words(world):
     onboard(world)
-    quote, _policy = buy(world, payout=100)
-    body = world.client.get("/api/dashboard").json()
-    assert body["active_coverage_cents"] == 10000
-    assert body["premiums_paid_cents"] == quote["premium_cents"]
-    assert body["payouts_received_cents"] == 0
-    assert body["activity"]
+    plan = {"topic": "weather", "title": "Rain Sunday at the patio", "why": "Rain empties your patio.", "catch": "Pays on Central Park."}
+    _quote, policy = buy(world, payout=100, plan=plan)
+    assert {key: policy[key] for key in plan} == plan
+    listed = world.client.get("/api/policies").json()
+    assert [(p["title"], p["topic"]) for p in listed] == [("Rain Sunday at the patio", "weather")]

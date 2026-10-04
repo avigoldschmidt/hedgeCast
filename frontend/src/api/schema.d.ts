@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/api/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask */
+        post: operations["ask_api_ask_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/businesses": {
         parameters: {
             query?: never;
@@ -39,32 +56,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/dashboard": {
+    "/api/forecast": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Dashboard */
-        get: operations["dashboard_api_dashboard_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/events/{event_ticker}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Event */
-        get: operations["event_api_events__event_ticker__get"];
+        /** Forecast */
+        get: operations["forecast_api_forecast_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -82,23 +82,6 @@ export interface paths {
         };
         /** Health */
         get: operations["health_api_health_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/markets": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Markets */
-        get: operations["markets_api_markets_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -135,6 +118,23 @@ export interface paths {
         put?: never;
         /** Link Bank */
         post: operations["link_bank_api_me_bank_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/topics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set Topics */
+        put: operations["set_topics_api_me_topics_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -186,23 +186,6 @@ export interface paths {
         put?: never;
         /** Ops Settle */
         post: operations["ops_settle_api_ops_settle_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/perils": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Perils */
-        get: operations["perils_api_perils_get"];
-        put?: never;
-        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -279,15 +262,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/weather": {
+    "/api/topics": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Weather */
-        get: operations["weather_api_weather_get"];
+        /** Topic List */
+        get: operations["topic_list_api_topics_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -300,14 +283,17 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** ActivityItem */
-        ActivityItem: {
-            /** Created At */
-            created_at: string;
+        /** AskRequest */
+        AskRequest: {
+            /** Text */
+            text: string;
+        };
+        /** AskResult */
+        AskResult: {
+            /** Cards */
+            cards: components["schemas"]["PlanCard"][];
             /** Message */
             message: string;
-            /** Policy Id */
-            policy_id: number;
         };
         /** BankLink */
         BankLink: {
@@ -332,16 +318,22 @@ export interface components {
         };
         /** Business */
         Business: {
+            /** Bad Day Dollars */
+            bad_day_dollars: number;
             bank: components["schemas"]["BankLink"];
             city?: components["schemas"]["City"] | null;
             /** Created At */
             created_at: string;
+            /** Description */
+            description: string;
             /** Id */
             id: number;
             /** Industry */
             industry: string;
             /** Name */
             name: string;
+            /** Topics */
+            topics: ("weather" | "fuel" | "rates" | "prices" | "tariffs" | "sports" | "jobs" | "other")[];
         };
         /** BusinessListItem */
         BusinessListItem: {
@@ -353,6 +345,17 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** Choice */
+        Choice: {
+            /** Chance */
+            chance?: number | null;
+            /** Closes At */
+            closes_at: string;
+            /** Label */
+            label: string;
+            /** Ticker */
+            ticker: string;
+        };
         /** City */
         City: {
             /** Id */
@@ -362,67 +365,23 @@ export interface components {
             /** State */
             state: string;
         };
-        /** CoverageDay */
-        CoverageDay: {
-            /** Date */
-            date: string;
-            /** Label */
-            label: string;
-            /** Triggers */
-            triggers: components["schemas"]["TriggerOption"][];
-        };
         /** CreateBusiness */
         CreateBusiness: {
             /** City Id */
             city_id?: string | null;
-            /** Industry */
-            industry: string;
+            /** Description */
+            description: string;
             /** Name */
             name: string;
         };
-        /** Dashboard */
-        Dashboard: {
-            /** Active Coverage Cents */
-            active_coverage_cents: number;
-            /** Activity */
-            activity: components["schemas"]["ActivityItem"][];
-            business: components["schemas"]["Business"];
-            /** Payouts Received Cents */
-            payouts_received_cents: number;
-            /** Policies */
-            policies: components["schemas"]["PolicySummary"][];
-            /** Premiums Paid Cents */
-            premiums_paid_cents: number;
-        };
-        /** EventCard */
-        EventCard: {
-            /** Category */
-            category: string;
-            /** Closes At */
-            closes_at: string;
-            /** Event Ticker */
-            event_ticker: string;
-            /** Market Count */
-            market_count: number;
-            /** Markets */
-            markets: components["schemas"]["MarketOption"][];
-            /** Sub Title */
-            sub_title: string;
-            /** Title */
-            title: string;
-        };
-        /** EventDetail */
-        EventDetail: {
-            /** Category */
-            category: string;
-            /** Event Ticker */
-            event_ticker: string;
-            /** Markets */
-            markets: components["schemas"]["MarketOption"][];
-            /** Sub Title */
-            sub_title: string;
-            /** Title */
-            title: string;
+        /** Forecast */
+        Forecast: {
+            /** Cards */
+            cards: components["schemas"]["PlanCard"][];
+            /** Note */
+            note?: string | null;
+            /** Tailored */
+            tailored: boolean;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -439,26 +398,6 @@ export interface components {
             side: "yes" | "no";
             /** Ticker */
             ticker: string;
-        };
-        /** MarketOption */
-        MarketOption: {
-            /** Close Time */
-            close_time: string;
-            /** Outcome */
-            outcome: string;
-            /** Ticker */
-            ticker: string;
-            /** Title */
-            title: string;
-            /** Yes Probability */
-            yes_probability?: number | null;
-        };
-        /** MarketSearch */
-        MarketSearch: {
-            /** Categories */
-            categories: string[];
-            /** Events */
-            events: components["schemas"]["EventCard"][];
         };
         /** MoneyMovement */
         MoneyMovement: {
@@ -481,6 +420,8 @@ export interface components {
         };
         /** OpsOverview */
         OpsOverview: {
+            /** Advisor */
+            advisor: string;
             /** Counts */
             counts: {
                 [key: string]: number;
@@ -499,12 +440,8 @@ export interface components {
         };
         /** OpsPolicy */
         OpsPolicy: {
-            /** Basis Risk */
-            basis_risk?: ("low" | "medium" | "high") | null;
             /** Business Name */
             business_name: string;
-            /** Category */
-            category: string;
             /** Closes At */
             closes_at: string;
             /** Created At */
@@ -521,8 +458,6 @@ export interface components {
             premium_cents: number;
             /** Simulated */
             simulated: boolean;
-            /** Station Name */
-            station_name?: string | null;
             /**
              * Status
              * @enum {string}
@@ -530,25 +465,69 @@ export interface components {
             status: "PENDING" | "ACTIVE" | "AWAITING_RESULT" | "PAID" | "EXPIRED" | "REFUNDED" | "NEEDS_REVIEW";
             /** Title */
             title: string;
-        };
-        /** Peril */
-        Peril: {
-            /** Description */
-            description: string;
             /**
-             * Id
+             * Topic
              * @enum {string}
              */
-            id: "rain" | "heat" | "cold";
-            /** Name */
-            name: string;
+            topic: "weather" | "fuel" | "rates" | "prices" | "tariffs" | "sports" | "jobs" | "other";
+        };
+        /** PlanCard */
+        PlanCard: {
+            /** Catch */
+            catch: string;
+            /** Chance */
+            chance?: number | null;
+            /** Choices */
+            choices: components["schemas"]["Choice"][];
+            /** Closes At */
+            closes_at: string;
+            /** Group Title */
+            group_title: string;
+            /** Id */
+            id: string;
+            /**
+             * Side
+             * @enum {string}
+             */
+            side: "yes" | "no";
+            /** Ticker */
+            ticker: string;
+            /** Title */
+            title: string;
+            /**
+             * Topic
+             * @enum {string}
+             */
+            topic: "weather" | "fuel" | "rates" | "prices" | "tariffs" | "sports" | "jobs" | "other";
+            /** Warnings */
+            warnings: string[];
+            /** Why */
+            why: string;
+        };
+        /** PlanText */
+        PlanText: {
+            /**
+             * Catch
+             * @default
+             */
+            catch: string;
+            /** Title */
+            title: string;
+            /**
+             * Topic
+             * @enum {string}
+             */
+            topic: "weather" | "fuel" | "rates" | "prices" | "tariffs" | "sports" | "jobs" | "other";
+            /**
+             * Why
+             * @default
+             */
+            why: string;
         };
         /** PolicyDetail */
         PolicyDetail: {
-            /** Basis Risk */
-            basis_risk?: ("low" | "medium" | "high") | null;
-            /** Category */
-            category: string;
+            /** Catch */
+            catch: string;
             /** Closes At */
             closes_at: string;
             /** Created At */
@@ -569,8 +548,6 @@ export interface components {
             payout_each_cents: number;
             /** Premium Cents */
             premium_cents: number;
-            /** Station Name */
-            station_name?: string | null;
             /**
              * Status
              * @enum {string}
@@ -580,6 +557,13 @@ export interface components {
             terms: string;
             /** Title */
             title: string;
+            /**
+             * Topic
+             * @enum {string}
+             */
+            topic: "weather" | "fuel" | "rates" | "prices" | "tariffs" | "sports" | "jobs" | "other";
+            /** Why */
+            why: string;
         };
         /** PolicyEvent */
         PolicyEvent: {
@@ -616,10 +600,6 @@ export interface components {
         };
         /** PolicySummary */
         PolicySummary: {
-            /** Basis Risk */
-            basis_risk?: ("low" | "medium" | "high") | null;
-            /** Category */
-            category: string;
             /** Closes At */
             closes_at: string;
             /** Created At */
@@ -634,8 +614,6 @@ export interface components {
             payout_each_cents: number;
             /** Premium Cents */
             premium_cents: number;
-            /** Station Name */
-            station_name?: string | null;
             /**
              * Status
              * @enum {string}
@@ -643,12 +621,17 @@ export interface components {
             status: "PENDING" | "ACTIVE" | "AWAITING_RESULT" | "PAID" | "EXPIRED" | "REFUNDED" | "NEEDS_REVIEW";
             /** Title */
             title: string;
+            /**
+             * Topic
+             * @enum {string}
+             */
+            topic: "weather" | "fuel" | "rates" | "prices" | "tariffs" | "sports" | "jobs" | "other";
         };
         /** Quote */
         Quote: {
             breakdown: components["schemas"]["QuoteBreakdown"];
-            /** Category */
-            category: string;
+            /** Catch */
+            catch: string;
             /** Expires At */
             expires_at: string;
             /** Id */
@@ -661,14 +644,20 @@ export interface components {
             payout_each_cents: number;
             /** Premium Cents */
             premium_cents: number;
-            station?: components["schemas"]["Station"] | null;
             /** Terms */
             terms: string;
             thin_book: components["schemas"]["ThinBook"];
             /** Title */
             title: string;
+            /**
+             * Topic
+             * @enum {string}
+             */
+            topic: "weather" | "fuel" | "rates" | "prices" | "tariffs" | "sports" | "jobs" | "other";
             /** Warnings */
             warnings: string[];
+            /** Why */
+            why: string;
         };
         /** QuoteBreakdown */
         QuoteBreakdown: {
@@ -713,8 +702,7 @@ export interface components {
             legs: components["schemas"]["LegRequest"][];
             /** Payout Dollars */
             payout_dollars: number;
-            /** Peril */
-            peril?: ("rain" | "heat" | "cold") | null;
+            plan?: components["schemas"]["PlanText"] | null;
         };
         /** ResolveRequest */
         ResolveRequest: {
@@ -729,22 +717,6 @@ export interface components {
             /** Business Id */
             business_id: number;
         };
-        /** Station */
-        Station: {
-            /** Basis Note */
-            basis_note: string;
-            /**
-             * Basis Risk
-             * @enum {string}
-             */
-            basis_risk: "low" | "medium" | "high";
-            /** Code */
-            code: string;
-            /** Distance Km */
-            distance_km: number;
-            /** Name */
-            name: string;
-        };
         /** ThinBook */
         ThinBook: {
             /** Max Payout Dollars */
@@ -752,14 +724,22 @@ export interface components {
             /** Short */
             short: boolean;
         };
-        /** TriggerOption */
-        TriggerOption: {
-            /** Implied Probability */
-            implied_probability?: number | null;
-            /** Label */
-            label: string;
-            /** Ticker */
-            ticker: string;
+        /** TopicInfo */
+        TopicInfo: {
+            /** Blurb */
+            blurb: string;
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "weather" | "fuel" | "rates" | "prices" | "tariffs" | "sports" | "jobs" | "other";
+            /** Name */
+            name: string;
+        };
+        /** TopicsUpdate */
+        TopicsUpdate: {
+            /** Topics */
+            topics: ("weather" | "fuel" | "rates" | "prices" | "tariffs" | "sports" | "jobs" | "other")[];
         };
         /** ValidationError */
         ValidationError: {
@@ -773,15 +753,6 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
-        };
-        /** WeatherOptions */
-        WeatherOptions: {
-            /** Days */
-            days: components["schemas"]["CoverageDay"][];
-            /** Message */
-            message?: string | null;
-            peril: components["schemas"]["Peril"];
-            station: components["schemas"]["Station"];
         };
         /** WorkerStatus */
         WorkerStatus: {
@@ -801,6 +772,41 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    ask_api_ask_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                hc_business?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AskResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     businesses_api_businesses_get: {
         parameters: {
             query?: never;
@@ -874,7 +880,7 @@ export interface operations {
             };
         };
     };
-    dashboard_api_dashboard_get: {
+    forecast_api_forecast_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -891,38 +897,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Dashboard"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    event_api_events__event_ticker__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_ticker: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EventDetail"];
+                    "application/json": components["schemas"]["Forecast"];
                 };
             };
             /** @description Validation Error */
@@ -952,38 +927,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
-                };
-            };
-        };
-    };
-    markets_api_markets_get: {
-        parameters: {
-            query?: {
-                q?: string;
-                category?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MarketSearch"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1029,6 +972,41 @@ export interface operations {
             };
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Business"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_topics_api_me_topics_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                hc_business?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TopicsUpdate"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -1121,26 +1099,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OpsOverview"];
-                };
-            };
-        };
-    };
-    perils_api_perils_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Peril"][];
                 };
             };
         };
@@ -1332,16 +1290,12 @@ export interface operations {
             };
         };
     };
-    weather_api_weather_get: {
+    topic_list_api_topics_get: {
         parameters: {
-            query: {
-                peril: "rain" | "heat" | "cold";
-            };
+            query?: never;
             header?: never;
             path?: never;
-            cookie?: {
-                hc_business?: string | null;
-            };
+            cookie?: never;
         };
         requestBody?: never;
         responses: {
@@ -1351,16 +1305,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WeatherOptions"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["TopicInfo"][];
                 };
             };
         };

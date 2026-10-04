@@ -1,7 +1,4 @@
-"""Optional weather shortcut: maps a business city to the nearest Kalshi weather station and its daily markets.
-
-Nothing in the core engine depends on this module; weather markets also show up in normal market search.
-"""
+"""Data behind the weather topic: cities, the official Kalshi weather stations, and their daily markets."""
 
 import math
 from collections import namedtuple

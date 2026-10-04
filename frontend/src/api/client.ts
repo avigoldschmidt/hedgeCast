@@ -1,9 +1,10 @@
 import type { components } from './schema'
 
 export type S = components['schemas']
-export type PerilId = S['Peril']['id']
+export type TopicId = S['TopicInfo']['id']
 export type Side = S['LegRequest']['side']
 export type PolicyStatus = S['PolicySummary']['status']
+export type PlanCard = S['PlanCard']
 
 export class ApiError extends Error {
   status: number
@@ -37,18 +38,16 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 
 export const api = {
   cities: () => request<S['City'][]>('GET', '/cities'),
-  perils: () => request<S['Peril'][]>('GET', '/perils'),
+  topics: () => request<S['TopicInfo'][]>('GET', '/topics'),
   businesses: () => request<S['BusinessListItem'][]>('GET', '/businesses'),
   createBusiness: (body: S['CreateBusiness']) => request<S['Business']>('POST', '/businesses', body),
   startSession: (body: S['SessionRequest']) => request<S['Business']>('POST', '/session', body),
   endSession: () => request<{ ok: boolean }>('DELETE', '/session'),
   me: () => request<S['Business']>('GET', '/me'),
   linkBank: () => request<S['Business']>('POST', '/me/bank'),
-  dashboard: () => request<S['Dashboard']>('GET', '/dashboard'),
-  markets: (q: string, category: string | null) =>
-    request<S['MarketSearch']>('GET', `/markets?${new URLSearchParams({ q, ...(category ? { category } : {}) })}`),
-  event: (ticker: string) => request<S['EventDetail']>('GET', `/events/${encodeURIComponent(ticker)}`),
-  weather: (peril: PerilId) => request<S['WeatherOptions']>('GET', `/weather?peril=${peril}`),
+  setTopics: (topics: TopicId[]) => request<S['Business']>('PUT', '/me/topics', { topics }),
+  forecast: () => request<S['Forecast']>('GET', '/forecast'),
+  ask: (text: string) => request<S['AskResult']>('POST', '/ask', { text }),
   quote: (body: S['QuoteRequest']) => request<S['Quote']>('POST', '/quotes', body),
   bind: (body: S['BindRequest']) => request<S['PolicyDetail']>('POST', '/policies', body),
   policies: () => request<S['PolicySummary'][]>('GET', '/policies'),

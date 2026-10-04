@@ -1,9 +1,10 @@
-"""In-memory stand-ins for Kalshi market data and the Nessie bank. Used by tests and HEDGECAST_FAKES=1."""
+"""In-memory stand-ins for Kalshi market data, the Nessie bank, and Gemini. Used by tests and HEDGECAST_FAKES=1."""
 
 import itertools
 from datetime import datetime, time, timedelta, timezone
 
-from . import weather
+from . import topics, weather
+from .advisor import AdvisorError
 from .integrations.market_data import MarketDataError, MarketNotFound
 from .integrations.money import BankError
 
@@ -40,6 +41,18 @@ GENERAL_EVENTS = [
         "Politics",
         "New tariffs on Canadian lumber",
         [("KXTARIFFLUMBER-26", "Will the US raise tariffs on Canadian lumber this year?", "Yes", "0.20")],
+    ),
+    (
+        "KXCPI-26OCT",
+        "Economics",
+        "CPI in October",
+        [("KXCPI-26OCT-T0.3", "Will October CPI rise more than 0.3%?", "Above 0.3%", "0.35")],
+    ),
+    (
+        "KXNBAGAME-26OCT10NYKBOS",
+        "Sports",
+        "Knicks vs Celtics in New York",
+        [("KXNBAGAME-26OCT10NYKBOS-NYK", "Will the Knicks beat the Celtics?", "Knicks win", "0.55")],
     ),
 ]
 
@@ -154,6 +167,49 @@ class FakeMarketData:
 
 def _iso(moment):
     return moment.isoformat().replace("+00:00", "Z")
+
+
+class FakeAdvisor:
+    """Deterministic stand-in for Gemini. Tests can set `plans` to return exactly that, or `failing` to simulate an outage."""
+
+    name = "fake advisor"
+
+    def __init__(self):
+        self.plans = None
+        self.failing = False
+        self.curate_calls = 0
+
+    def profile(self, description, city):
+        self._check()
+        return topics.default_profile(description)
+
+    def curate(self, business, groups):
+        self._check()
+        self.curate_calls += 1
+        if self.plans is not None:
+            return self.plans
+        return [_fake_plan(group, business) for group in groups]
+
+    def ask(self, business, text, groups):
+        self._check()
+        if not groups:
+            return {"plans": [], "message": "No market covers that yet."}
+        return {"plans": [_fake_plan(group, business) for group in groups[:3]], "message": f"Here's what covers “{text}”."}
+
+    def _check(self):
+        if self.failing:
+            raise AdvisorError("Simulated advisor outage.")
+
+
+def _fake_plan(group, business):
+    return {
+        "group": group["id"],
+        "ticker": group["options"][0]["ticker"],
+        "side": "yes",
+        "title": group["title"],
+        "why": f"{business['name']} loses money when this happens.",
+        "catch": group["settles_on"],
+    }
 
 
 class FakeBank:

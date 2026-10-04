@@ -1,27 +1,40 @@
 {
   "components": {
     "schemas": {
-      "ActivityItem": {
+      "AskRequest": {
         "properties": {
-          "created_at": {
-            "title": "Created At",
+          "text": {
+            "maxLength": 300,
+            "minLength": 3,
+            "title": "Text",
             "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "AskRequest",
+        "type": "object"
+      },
+      "AskResult": {
+        "properties": {
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/PlanCard"
+            },
+            "title": "Cards",
+            "type": "array"
           },
           "message": {
             "title": "Message",
             "type": "string"
-          },
-          "policy_id": {
-            "title": "Policy Id",
-            "type": "integer"
           }
         },
         "required": [
-          "policy_id",
-          "message",
-          "created_at"
+          "cards",
+          "message"
         ],
-        "title": "ActivityItem",
+        "title": "AskResult",
         "type": "object"
       },
       "BankLink": {
@@ -90,6 +103,10 @@
       },
       "Business": {
         "properties": {
+          "bad_day_dollars": {
+            "title": "Bad Day Dollars",
+            "type": "integer"
+          },
           "bank": {
             "$ref": "#/components/schemas/BankLink"
           },
@@ -107,6 +124,10 @@
             "title": "Created At",
             "type": "string"
           },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
           "id": {
             "title": "Id",
             "type": "integer"
@@ -118,12 +139,32 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "topics": {
+            "items": {
+              "enum": [
+                "weather",
+                "fuel",
+                "rates",
+                "prices",
+                "tariffs",
+                "sports",
+                "jobs",
+                "other"
+              ],
+              "type": "string"
+            },
+            "title": "Topics",
+            "type": "array"
           }
         },
         "required": [
           "id",
           "name",
+          "description",
           "industry",
+          "topics",
+          "bad_day_dollars",
           "bank",
           "created_at"
         ],
@@ -163,6 +204,40 @@
         "title": "BusinessListItem",
         "type": "object"
       },
+      "Choice": {
+        "properties": {
+          "chance": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chance"
+          },
+          "closes_at": {
+            "title": "Closes At",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "ticker": {
+            "title": "Ticker",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticker",
+          "label",
+          "closes_at"
+        ],
+        "title": "Choice",
+        "type": "object"
+      },
       "City": {
         "properties": {
           "id": {
@@ -186,32 +261,6 @@
         "title": "City",
         "type": "object"
       },
-      "CoverageDay": {
-        "properties": {
-          "date": {
-            "title": "Date",
-            "type": "string"
-          },
-          "label": {
-            "title": "Label",
-            "type": "string"
-          },
-          "triggers": {
-            "items": {
-              "$ref": "#/components/schemas/TriggerOption"
-            },
-            "title": "Triggers",
-            "type": "array"
-          }
-        },
-        "required": [
-          "date",
-          "label",
-          "triggers"
-        ],
-        "title": "CoverageDay",
-        "type": "object"
-      },
       "CreateBusiness": {
         "properties": {
           "city_id": {
@@ -225,10 +274,10 @@
             ],
             "title": "City Id"
           },
-          "industry": {
-            "maxLength": 80,
-            "minLength": 1,
-            "title": "Industry",
+          "description": {
+            "maxLength": 300,
+            "minLength": 3,
+            "title": "Description",
             "type": "string"
           },
           "name": {
@@ -240,134 +289,41 @@
         },
         "required": [
           "name",
-          "industry"
+          "description"
         ],
         "title": "CreateBusiness",
         "type": "object"
       },
-      "Dashboard": {
+      "Forecast": {
         "properties": {
-          "active_coverage_cents": {
-            "title": "Active Coverage Cents",
-            "type": "integer"
-          },
-          "activity": {
+          "cards": {
             "items": {
-              "$ref": "#/components/schemas/ActivityItem"
+              "$ref": "#/components/schemas/PlanCard"
             },
-            "title": "Activity",
+            "title": "Cards",
             "type": "array"
           },
-          "business": {
-            "$ref": "#/components/schemas/Business"
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
           },
-          "payouts_received_cents": {
-            "title": "Payouts Received Cents",
-            "type": "integer"
-          },
-          "policies": {
-            "items": {
-              "$ref": "#/components/schemas/PolicySummary"
-            },
-            "title": "Policies",
-            "type": "array"
-          },
-          "premiums_paid_cents": {
-            "title": "Premiums Paid Cents",
-            "type": "integer"
+          "tailored": {
+            "title": "Tailored",
+            "type": "boolean"
           }
         },
         "required": [
-          "business",
-          "active_coverage_cents",
-          "premiums_paid_cents",
-          "payouts_received_cents",
-          "policies",
-          "activity"
+          "cards",
+          "tailored"
         ],
-        "title": "Dashboard",
-        "type": "object"
-      },
-      "EventCard": {
-        "properties": {
-          "category": {
-            "title": "Category",
-            "type": "string"
-          },
-          "closes_at": {
-            "title": "Closes At",
-            "type": "string"
-          },
-          "event_ticker": {
-            "title": "Event Ticker",
-            "type": "string"
-          },
-          "market_count": {
-            "title": "Market Count",
-            "type": "integer"
-          },
-          "markets": {
-            "items": {
-              "$ref": "#/components/schemas/MarketOption"
-            },
-            "title": "Markets",
-            "type": "array"
-          },
-          "sub_title": {
-            "title": "Sub Title",
-            "type": "string"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "event_ticker",
-          "title",
-          "sub_title",
-          "category",
-          "market_count",
-          "closes_at",
-          "markets"
-        ],
-        "title": "EventCard",
-        "type": "object"
-      },
-      "EventDetail": {
-        "properties": {
-          "category": {
-            "title": "Category",
-            "type": "string"
-          },
-          "event_ticker": {
-            "title": "Event Ticker",
-            "type": "string"
-          },
-          "markets": {
-            "items": {
-              "$ref": "#/components/schemas/MarketOption"
-            },
-            "title": "Markets",
-            "type": "array"
-          },
-          "sub_title": {
-            "title": "Sub Title",
-            "type": "string"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "event_ticker",
-          "title",
-          "sub_title",
-          "category",
-          "markets"
-        ],
-        "title": "EventDetail",
+        "title": "Forecast",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -403,69 +359,6 @@
           "ticker"
         ],
         "title": "LegRequest",
-        "type": "object"
-      },
-      "MarketOption": {
-        "properties": {
-          "close_time": {
-            "title": "Close Time",
-            "type": "string"
-          },
-          "outcome": {
-            "title": "Outcome",
-            "type": "string"
-          },
-          "ticker": {
-            "title": "Ticker",
-            "type": "string"
-          },
-          "title": {
-            "title": "Title",
-            "type": "string"
-          },
-          "yes_probability": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Yes Probability"
-          }
-        },
-        "required": [
-          "ticker",
-          "title",
-          "outcome",
-          "close_time"
-        ],
-        "title": "MarketOption",
-        "type": "object"
-      },
-      "MarketSearch": {
-        "properties": {
-          "categories": {
-            "items": {
-              "type": "string"
-            },
-            "title": "Categories",
-            "type": "array"
-          },
-          "events": {
-            "items": {
-              "$ref": "#/components/schemas/EventCard"
-            },
-            "title": "Events",
-            "type": "array"
-          }
-        },
-        "required": [
-          "categories",
-          "events"
-        ],
-        "title": "MarketSearch",
         "type": "object"
       },
       "MoneyMovement": {
@@ -519,6 +412,10 @@
       },
       "OpsOverview": {
         "properties": {
+          "advisor": {
+            "title": "Advisor",
+            "type": "string"
+          },
           "counts": {
             "additionalProperties": {
               "type": "integer"
@@ -570,6 +467,7 @@
         "required": [
           "hedge_mode",
           "data_source",
+          "advisor",
           "worker",
           "counts",
           "policies"
@@ -579,28 +477,8 @@
       },
       "OpsPolicy": {
         "properties": {
-          "basis_risk": {
-            "anyOf": [
-              {
-                "enum": [
-                  "low",
-                  "medium",
-                  "high"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Basis Risk"
-          },
           "business_name": {
             "title": "Business Name",
-            "type": "string"
-          },
-          "category": {
-            "title": "Category",
             "type": "string"
           },
           "closes_at": {
@@ -635,17 +513,6 @@
             "title": "Simulated",
             "type": "boolean"
           },
-          "station_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Station Name"
-          },
           "status": {
             "enum": [
               "PENDING",
@@ -662,11 +529,25 @@
           "title": {
             "title": "Title",
             "type": "string"
+          },
+          "topic": {
+            "enum": [
+              "weather",
+              "fuel",
+              "rates",
+              "prices",
+              "tariffs",
+              "sports",
+              "jobs",
+              "other"
+            ],
+            "title": "Topic",
+            "type": "string"
           }
         },
         "required": [
           "id",
-          "category",
+          "topic",
           "title",
           "status",
           "closes_at",
@@ -681,54 +562,146 @@
         "title": "OpsPolicy",
         "type": "object"
       },
-      "Peril": {
+      "PlanCard": {
         "properties": {
-          "description": {
-            "title": "Description",
+          "catch": {
+            "title": "Catch",
             "type": "string"
           },
-          "id": {
-            "enum": [
-              "rain",
-              "heat",
-              "cold"
-            ],
-            "title": "Id",
-            "type": "string"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "description"
-        ],
-        "title": "Peril",
-        "type": "object"
-      },
-      "PolicyDetail": {
-        "properties": {
-          "basis_risk": {
+          "chance": {
             "anyOf": [
               {
-                "enum": [
-                  "low",
-                  "medium",
-                  "high"
-                ],
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Basis Risk"
+            "title": "Chance"
           },
-          "category": {
-            "title": "Category",
+          "choices": {
+            "items": {
+              "$ref": "#/components/schemas/Choice"
+            },
+            "title": "Choices",
+            "type": "array"
+          },
+          "closes_at": {
+            "title": "Closes At",
+            "type": "string"
+          },
+          "group_title": {
+            "title": "Group Title",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "side": {
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "title": "Side",
+            "type": "string"
+          },
+          "ticker": {
+            "title": "Ticker",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "topic": {
+            "enum": [
+              "weather",
+              "fuel",
+              "rates",
+              "prices",
+              "tariffs",
+              "sports",
+              "jobs",
+              "other"
+            ],
+            "title": "Topic",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          },
+          "why": {
+            "title": "Why",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "topic",
+          "title",
+          "group_title",
+          "why",
+          "catch",
+          "warnings",
+          "side",
+          "ticker",
+          "closes_at",
+          "choices"
+        ],
+        "title": "PlanCard",
+        "type": "object"
+      },
+      "PlanText": {
+        "properties": {
+          "catch": {
+            "default": "",
+            "maxLength": 300,
+            "title": "Catch",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "topic": {
+            "enum": [
+              "weather",
+              "fuel",
+              "rates",
+              "prices",
+              "tariffs",
+              "sports",
+              "jobs",
+              "other"
+            ],
+            "title": "Topic",
+            "type": "string"
+          },
+          "why": {
+            "default": "",
+            "maxLength": 300,
+            "title": "Why",
+            "type": "string"
+          }
+        },
+        "required": [
+          "topic",
+          "title"
+        ],
+        "title": "PlanText",
+        "type": "object"
+      },
+      "PolicyDetail": {
+        "properties": {
+          "catch": {
+            "title": "Catch",
             "type": "string"
           },
           "closes_at": {
@@ -780,17 +753,6 @@
             "title": "Premium Cents",
             "type": "integer"
           },
-          "station_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Station Name"
-          },
           "status": {
             "enum": [
               "PENDING",
@@ -811,11 +773,29 @@
           "title": {
             "title": "Title",
             "type": "string"
+          },
+          "topic": {
+            "enum": [
+              "weather",
+              "fuel",
+              "rates",
+              "prices",
+              "tariffs",
+              "sports",
+              "jobs",
+              "other"
+            ],
+            "title": "Topic",
+            "type": "string"
+          },
+          "why": {
+            "title": "Why",
+            "type": "string"
           }
         },
         "required": [
           "id",
-          "category",
+          "topic",
           "title",
           "status",
           "closes_at",
@@ -824,6 +804,8 @@
           "premium_cents",
           "paid_cents",
           "created_at",
+          "why",
+          "catch",
           "terms",
           "legs",
           "events",
@@ -926,26 +908,6 @@
       },
       "PolicySummary": {
         "properties": {
-          "basis_risk": {
-            "anyOf": [
-              {
-                "enum": [
-                  "low",
-                  "medium",
-                  "high"
-                ],
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Basis Risk"
-          },
-          "category": {
-            "title": "Category",
-            "type": "string"
-          },
           "closes_at": {
             "title": "Closes At",
             "type": "string"
@@ -974,17 +936,6 @@
             "title": "Premium Cents",
             "type": "integer"
           },
-          "station_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Station Name"
-          },
           "status": {
             "enum": [
               "PENDING",
@@ -1001,11 +952,25 @@
           "title": {
             "title": "Title",
             "type": "string"
+          },
+          "topic": {
+            "enum": [
+              "weather",
+              "fuel",
+              "rates",
+              "prices",
+              "tariffs",
+              "sports",
+              "jobs",
+              "other"
+            ],
+            "title": "Topic",
+            "type": "string"
           }
         },
         "required": [
           "id",
-          "category",
+          "topic",
           "title",
           "status",
           "closes_at",
@@ -1023,8 +988,8 @@
           "breakdown": {
             "$ref": "#/components/schemas/QuoteBreakdown"
           },
-          "category": {
-            "title": "Category",
+          "catch": {
+            "title": "Catch",
             "type": "string"
           },
           "expires_at": {
@@ -1054,16 +1019,6 @@
             "title": "Premium Cents",
             "type": "integer"
           },
-          "station": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/Station"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
           "terms": {
             "title": "Terms",
             "type": "string"
@@ -1075,19 +1030,39 @@
             "title": "Title",
             "type": "string"
           },
+          "topic": {
+            "enum": [
+              "weather",
+              "fuel",
+              "rates",
+              "prices",
+              "tariffs",
+              "sports",
+              "jobs",
+              "other"
+            ],
+            "title": "Topic",
+            "type": "string"
+          },
           "warnings": {
             "items": {
               "type": "string"
             },
             "title": "Warnings",
             "type": "array"
+          },
+          "why": {
+            "title": "Why",
+            "type": "string"
           }
         },
         "required": [
           "id",
           "expires_at",
           "title",
-          "category",
+          "topic",
+          "why",
+          "catch",
           "payout_each_cents",
           "max_payout_cents",
           "premium_cents",
@@ -1206,21 +1181,15 @@
             "title": "Payout Dollars",
             "type": "integer"
           },
-          "peril": {
+          "plan": {
             "anyOf": [
               {
-                "enum": [
-                  "rain",
-                  "heat",
-                  "cold"
-                ],
-                "type": "string"
+                "$ref": "#/components/schemas/PlanText"
               },
               {
                 "type": "null"
               }
-            ],
-            "title": "Peril"
+            ]
           }
         },
         "required": [
@@ -1260,44 +1229,6 @@
         "title": "SessionRequest",
         "type": "object"
       },
-      "Station": {
-        "properties": {
-          "basis_note": {
-            "title": "Basis Note",
-            "type": "string"
-          },
-          "basis_risk": {
-            "enum": [
-              "low",
-              "medium",
-              "high"
-            ],
-            "title": "Basis Risk",
-            "type": "string"
-          },
-          "code": {
-            "title": "Code",
-            "type": "string"
-          },
-          "distance_km": {
-            "title": "Distance Km",
-            "type": "integer"
-          },
-          "name": {
-            "title": "Name",
-            "type": "string"
-          }
-        },
-        "required": [
-          "code",
-          "name",
-          "distance_km",
-          "basis_risk",
-          "basis_note"
-        ],
-        "title": "Station",
-        "type": "object"
-      },
       "ThinBook": {
         "properties": {
           "max_payout_dollars": {
@@ -1316,33 +1247,65 @@
         "title": "ThinBook",
         "type": "object"
       },
-      "TriggerOption": {
+      "TopicInfo": {
         "properties": {
-          "implied_probability": {
-            "anyOf": [
-              {
-                "type": "number"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Implied Probability"
-          },
-          "label": {
-            "title": "Label",
+          "blurb": {
+            "title": "Blurb",
             "type": "string"
           },
-          "ticker": {
-            "title": "Ticker",
+          "id": {
+            "enum": [
+              "weather",
+              "fuel",
+              "rates",
+              "prices",
+              "tariffs",
+              "sports",
+              "jobs",
+              "other"
+            ],
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
             "type": "string"
           }
         },
         "required": [
-          "ticker",
-          "label"
+          "id",
+          "name",
+          "blurb"
         ],
-        "title": "TriggerOption",
+        "title": "TopicInfo",
+        "type": "object"
+      },
+      "TopicsUpdate": {
+        "properties": {
+          "topics": {
+            "items": {
+              "enum": [
+                "weather",
+                "fuel",
+                "rates",
+                "prices",
+                "tariffs",
+                "sports",
+                "jobs",
+                "other"
+              ],
+              "type": "string"
+            },
+            "maxItems": 7,
+            "minItems": 1,
+            "title": "Topics",
+            "type": "array"
+          }
+        },
+        "required": [
+          "topics"
+        ],
+        "title": "TopicsUpdate",
         "type": "object"
       },
       "ValidationError": {
@@ -1383,41 +1346,6 @@
           "type"
         ],
         "title": "ValidationError",
-        "type": "object"
-      },
-      "WeatherOptions": {
-        "properties": {
-          "days": {
-            "items": {
-              "$ref": "#/components/schemas/CoverageDay"
-            },
-            "title": "Days",
-            "type": "array"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          },
-          "peril": {
-            "$ref": "#/components/schemas/Peril"
-          },
-          "station": {
-            "$ref": "#/components/schemas/Station"
-          }
-        },
-        "required": [
-          "peril",
-          "station",
-          "days"
-        ],
-        "title": "WeatherOptions",
         "type": "object"
       },
       "WorkerStatus": {
@@ -1463,6 +1391,62 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/ask": {
+      "post": {
+        "operationId": "ask_api_ask_post",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "hc_business",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hc Business"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AskResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ask"
+      }
+    },
     "/api/businesses": {
       "get": {
         "operationId": "businesses_api_businesses_get",
@@ -1543,9 +1527,9 @@
         "summary": "Cities"
       }
     },
-    "/api/dashboard": {
+    "/api/forecast": {
       "get": {
-        "operationId": "dashboard_api_dashboard_get",
+        "operationId": "forecast_api_forecast_get",
         "parameters": [
           {
             "in": "cookie",
@@ -1569,7 +1553,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Dashboard"
+                  "$ref": "#/components/schemas/Forecast"
                 }
               }
             },
@@ -1586,46 +1570,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Dashboard"
-      }
-    },
-    "/api/events/{event_ticker}": {
-      "get": {
-        "operationId": "event_api_events__event_ticker__get",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "event_ticker",
-            "required": true,
-            "schema": {
-              "title": "Event Ticker",
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EventDetail"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Event"
+        "summary": "Forecast"
       }
     },
     "/api/health": {
@@ -1642,62 +1587,6 @@
           }
         },
         "summary": "Health"
-      }
-    },
-    "/api/markets": {
-      "get": {
-        "operationId": "markets_api_markets_get",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "q",
-            "required": false,
-            "schema": {
-              "default": "",
-              "title": "Q",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
-            "name": "category",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Category"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MarketSearch"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Markets"
       }
     },
     "/api/me": {
@@ -1792,6 +1681,62 @@
         "summary": "Link Bank"
       }
     },
+    "/api/me/topics": {
+      "put": {
+        "operationId": "set_topics_api_me_topics_put",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "hc_business",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hc Business"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TopicsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Business"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Topics"
+      }
+    },
     "/api/ops": {
       "get": {
         "operationId": "ops_api_ops_get",
@@ -1875,28 +1820,6 @@
           }
         },
         "summary": "Ops Settle"
-      }
-    },
-    "/api/perils": {
-      "get": {
-        "operationId": "perils_api_perils_get",
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/Peril"
-                  },
-                  "title": "Response Perils Api Perils Get",
-                  "type": "array"
-                }
-              }
-            },
-            "description": "Successful Response"
-          }
-        },
-        "summary": "Perils"
       }
     },
     "/api/policies": {
@@ -2166,64 +2089,26 @@
         "summary": "Start Session"
       }
     },
-    "/api/weather": {
+    "/api/topics": {
       "get": {
-        "operationId": "weather_api_weather_get",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "peril",
-            "required": true,
-            "schema": {
-              "enum": [
-                "rain",
-                "heat",
-                "cold"
-              ],
-              "title": "Peril",
-              "type": "string"
-            }
-          },
-          {
-            "in": "cookie",
-            "name": "hc_business",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Hc Business"
-            }
-          }
-        ],
+        "operationId": "topic_list_api_topics_get",
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/WeatherOptions"
+                  "items": {
+                    "$ref": "#/components/schemas/TopicInfo"
+                  },
+                  "title": "Response Topic List Api Topics Get",
+                  "type": "array"
                 }
               }
             },
             "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
           }
         },
-        "summary": "Weather"
+        "summary": "Topic List"
       }
     }
   }

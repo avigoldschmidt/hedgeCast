@@ -4,8 +4,7 @@ from pydantic import BaseModel, Field
 from typing_extensions import Literal
 
 Side = Literal["yes", "no"]
-PerilId = Literal["rain", "heat", "cold"]
-BasisRisk = Literal["low", "medium", "high"]
+TopicId = Literal["weather", "fuel", "rates", "prices", "tariffs", "sports", "jobs", "other"]
 PolicyStatus = Literal["PENDING", "ACTIVE", "AWAITING_RESULT", "PAID", "EXPIRED", "REFUNDED", "NEEDS_REVIEW"]
 
 
@@ -18,6 +17,12 @@ class City(BaseModel):
     state: str
 
 
+class TopicInfo(BaseModel):
+    id: TopicId
+    name: str
+    blurb: str
+
+
 class BankLink(BaseModel):
     linked: bool
     account_mask: Optional[str] = None
@@ -28,7 +33,10 @@ class BankLink(BaseModel):
 class Business(BaseModel):
     id: int
     name: str
+    description: str
     industry: str
+    topics: List[TopicId]
+    bad_day_dollars: int
     city: Optional[City] = None
     bank: BankLink
     created_at: str
@@ -43,82 +51,56 @@ class BusinessListItem(BaseModel):
 
 class CreateBusiness(BaseModel):
     name: str = Field(min_length=1, max_length=80)
-    industry: str = Field(min_length=1, max_length=80)
+    description: str = Field(min_length=3, max_length=300)
     city_id: Optional[str] = None
+
+
+class TopicsUpdate(BaseModel):
+    topics: List[TopicId] = Field(min_length=1, max_length=7)
 
 
 class SessionRequest(BaseModel):
     business_id: int
 
 
-# Market discovery
+# Forecast
 
 
-class MarketOption(BaseModel):
+class Choice(BaseModel):
     ticker: str
-    title: str
-    outcome: str
-    yes_probability: Optional[float] = None
-    close_time: str
-
-
-class EventCard(BaseModel):
-    event_ticker: str
-    title: str
-    sub_title: str
-    category: str
-    market_count: int
+    label: str
+    chance: Optional[float] = None
     closes_at: str
-    markets: List[MarketOption]
 
 
-class MarketSearch(BaseModel):
-    categories: List[str]
-    events: List[EventCard]
-
-
-class EventDetail(BaseModel):
-    event_ticker: str
+class PlanCard(BaseModel):
+    id: str
+    topic: TopicId
     title: str
-    sub_title: str
-    category: str
-    markets: List[MarketOption]
-
-
-# Optional weather shortcut
-
-
-class Peril(BaseModel):
-    id: PerilId
-    name: str
-    description: str
-
-
-class Station(BaseModel):
-    code: str
-    name: str
-    distance_km: int
-    basis_risk: BasisRisk
-    basis_note: str
-
-
-class TriggerOption(BaseModel):
+    group_title: str
+    why: str
+    catch: str
+    warnings: List[str]
+    side: Side
     ticker: str
-    label: str
-    implied_probability: Optional[float] = None
+    chance: Optional[float] = None
+    closes_at: str
+    choices: List[Choice]
 
 
-class CoverageDay(BaseModel):
-    date: str
-    label: str
-    triggers: List[TriggerOption]
+class Forecast(BaseModel):
+    cards: List[PlanCard]
+    tailored: bool
+    note: Optional[str] = None
 
 
-class WeatherOptions(BaseModel):
-    peril: Peril
-    station: Station
-    days: List[CoverageDay]
-    message: Optional[str] = None
+class AskRequest(BaseModel):
+    text: str = Field(min_length=3, max_length=300)
+
+
+class AskResult(BaseModel):
+    cards: List[PlanCard]
+    message: str
 
 
 # Quotes
@@ -129,10 +111,17 @@ class LegRequest(BaseModel):
     side: Side = "yes"
 
 
+class PlanText(BaseModel):
+    topic: TopicId
+    title: str = Field(min_length=1, max_length=120)
+    why: str = Field(default="", max_length=300)
+    catch: str = Field(default="", max_length=300)
+
+
 class QuoteRequest(BaseModel):
     legs: List[LegRequest] = Field(min_length=1, max_length=5)
     payout_dollars: int = Field(ge=1)
-    peril: Optional[PerilId] = None
+    plan: Optional[PlanText] = None
 
 
 class QuoteLeg(BaseModel):
@@ -164,8 +153,9 @@ class Quote(BaseModel):
     id: str
     expires_at: str
     title: str
-    category: str
-    station: Optional[Station] = None
+    topic: TopicId
+    why: str
+    catch: str
     payout_each_cents: int
     max_payout_cents: int
     premium_cents: int
@@ -212,10 +202,8 @@ class PolicyLeg(BaseModel):
 
 class PolicySummary(BaseModel):
     id: int
-    category: str
+    topic: TopicId
     title: str
-    station_name: Optional[str] = None
-    basis_risk: Optional[BasisRisk] = None
     status: PolicyStatus
     closes_at: str
     payout_each_cents: int
@@ -226,25 +214,12 @@ class PolicySummary(BaseModel):
 
 
 class PolicyDetail(PolicySummary):
+    why: str
+    catch: str
     terms: str
     legs: List[PolicyLeg]
     events: List[PolicyEvent]
     movements: List[MoneyMovement]
-
-
-class ActivityItem(BaseModel):
-    policy_id: int
-    message: str
-    created_at: str
-
-
-class Dashboard(BaseModel):
-    business: Business
-    active_coverage_cents: int
-    premiums_paid_cents: int
-    payouts_received_cents: int
-    policies: List[PolicySummary]
-    activity: List[ActivityItem]
 
 
 # Risk desk
@@ -264,6 +239,7 @@ class OpsPolicy(PolicySummary):
 class OpsOverview(BaseModel):
     hedge_mode: str
     data_source: str
+    advisor: str
     reserve_balance_cents: Optional[int] = None
     reserve_error: Optional[str] = None
     worker: WorkerStatus

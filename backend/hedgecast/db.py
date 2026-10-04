@@ -13,7 +13,10 @@ CREATE TABLE IF NOT EXISTS settings (
 CREATE TABLE IF NOT EXISTS businesses (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
     industry TEXT NOT NULL,
+    topics TEXT NOT NULL DEFAULT '[]',
+    bad_day_dollars INTEGER NOT NULL DEFAULT 1000,
     city_id TEXT,
     bank_customer_id TEXT,
     bank_account_id TEXT,
@@ -33,10 +36,10 @@ CREATE TABLE IF NOT EXISTS policies (
     id INTEGER PRIMARY KEY,
     business_id INTEGER NOT NULL REFERENCES businesses(id),
     quote_id TEXT NOT NULL UNIQUE REFERENCES quotes(id),
-    category TEXT NOT NULL,
-    station_name TEXT,
-    basis_risk TEXT,
+    topic TEXT NOT NULL,
     title TEXT NOT NULL,
+    why TEXT NOT NULL DEFAULT '',
+    catch TEXT NOT NULL DEFAULT '',
     terms TEXT NOT NULL,
     payout_each_cents INTEGER NOT NULL,
     max_payout_cents INTEGER NOT NULL,
@@ -98,7 +101,7 @@ def now_iso():
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 DATA_TABLES = ("money_movements", "policy_events", "policy_legs", "policies", "quotes", "businesses")
 
 
@@ -151,17 +154,23 @@ class Database:
             (key, value),
         )
 
-    def create_business(self, name, industry, city_id):
+    def create_business(self, name, description, industry, city_id, topics, bad_day_dollars):
         return self.run(
-            "INSERT INTO businesses (name, industry, city_id, created_at) VALUES (?, ?, ?, ?)",
-            (name, industry, city_id, now_iso()),
+            """
+            INSERT INTO businesses (name, description, industry, city_id, topics, bad_day_dollars, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (name, description, industry, city_id, json.dumps(topics), bad_day_dollars, now_iso()),
         )
 
     def get_business(self, business_id):
-        return self.one("SELECT * FROM businesses WHERE id = ?", (business_id,))
+        return _business(self.one("SELECT * FROM businesses WHERE id = ?", (business_id,)))
 
     def list_businesses(self):
-        return self.all("SELECT * FROM businesses ORDER BY id DESC")
+        return [_business(row) for row in self.all("SELECT * FROM businesses ORDER BY id DESC")]
+
+    def set_topics(self, business_id, topics):
+        self.run("UPDATE businesses SET topics = ? WHERE id = ?", (json.dumps(topics), business_id))
 
     def set_bank(self, business_id, customer_id, account_id):
         self.run(
@@ -188,17 +197,17 @@ class Database:
             cursor = conn.execute(
                 """
                 INSERT INTO policies (
-                    business_id, quote_id, category, station_name, basis_risk, title, terms,
+                    business_id, quote_id, topic, title, why, catch, terms,
                     payout_each_cents, max_payout_cents, premium_cents, status, created_at, updated_at
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?)
                 """,
                 (
                     policy["business_id"],
                     policy["quote_id"],
-                    policy["category"],
-                    policy.get("station_name"),
-                    policy.get("basis_risk"),
+                    policy["topic"],
                     policy["title"],
+                    policy.get("why", ""),
+                    policy.get("catch", ""),
                     policy["terms"],
                     policy["payout_each_cents"],
                     policy["max_payout_cents"],
@@ -259,15 +268,6 @@ class Database:
     def events(self, policy_id):
         return self.all("SELECT * FROM policy_events WHERE policy_id = ? ORDER BY id", (policy_id,))
 
-    def recent_events(self, business_id, limit=20):
-        return self.all(
-            """
-            SELECT e.* FROM policy_events e JOIN policies p ON p.id = e.policy_id
-            WHERE p.business_id = ? ORDER BY e.id DESC LIMIT ?
-            """,
-            (business_id, limit),
-        )
-
     def add_event(self, policy_id, kind, message):
         self.run(
             "INSERT INTO policy_events (policy_id, kind, message, created_at) VALUES (?, ?, ?, ?)",
@@ -326,3 +326,9 @@ class Database:
     def status_counts(self):
         rows = self.all("SELECT status, COUNT(*) AS n FROM policies GROUP BY status")
         return {row["status"]: row["n"] for row in rows}
+
+
+def _business(row):
+    if row:
+        row["topics"] = json.loads(row["topics"])
+    return row

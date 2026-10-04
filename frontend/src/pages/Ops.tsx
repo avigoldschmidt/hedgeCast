@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Play } from 'lucide-react'
 import { Link } from 'react-router'
 import { api } from '@/api/client'
-import { CategoryIcon, ErrorNote, Loading, Stat, StatusBadge } from '@/components/domain'
+import { ErrorNote, Loading, Stat, StatusBadge, TopicIcon } from '@/components/domain'
 import { Logo } from '@/components/Logo'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -14,7 +14,7 @@ export function Ops() {
   const ops = useQuery({ queryKey: ['ops'], queryFn: api.ops, refetchInterval: 10000 })
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ['ops'] })
-    queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+    queryClient.invalidateQueries({ queryKey: ['policies'] })
     queryClient.invalidateQueries({ queryKey: ['policy'] })
   }
   const settle = useMutation({ mutationFn: api.settle, onSuccess: refresh })
@@ -39,7 +39,8 @@ export function Ops() {
         <ErrorNote error={ops.error} />
         {ops.data && (
           <>
-            <Card className="grid grid-cols-2 gap-6 p-6 md:grid-cols-4">
+            <Card className="grid grid-cols-2 gap-6 p-6 md:grid-cols-5">
+              <Stat label="Advisor" value={<span className="text-base">{ops.data.advisor}</span>} sub="Profiles and plan wording" />
               <Stat
                 label="Hedge mode"
                 value={<span className="capitalize">{ops.data.hedge_mode}</span>}
@@ -104,7 +105,7 @@ export function Ops() {
                           <tr key={policy.id} className="border-t border-line align-middle">
                             <td className="py-3">
                               <div className="flex items-center gap-3">
-                                <CategoryIcon category={policy.category} className="size-8 rounded-lg" />
+                                <TopicIcon topic={policy.topic} className="size-8 rounded-lg" />
                                 <div>
                                   <div className="font-medium">#{policy.id} · {policy.title}</div>
                                   <div className="text-xs text-muted">
@@ -138,7 +139,7 @@ export function Ops() {
                                     disabled={resolve.isPending}
                                     onClick={() => resolve.mutate({ id: policy.id, result: 'no' })}
                                   >
-                                    Resolve                                     Resolve NO
+                                    Resolve NO
                                   </Button>
                                 </span>
                               )}

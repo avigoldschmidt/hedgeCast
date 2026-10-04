@@ -6,7 +6,7 @@ from hedgecast.db import Database
 
 POLICY = {
     "quote_id": "q-1",
-    "category": "Economics",
+    "topic": "rates",
     "title": "Fed decision in December",
     "terms": "Pays if the Fed holds.",
     "payout_each_cents": 100000,
@@ -26,7 +26,7 @@ LEG = {
 @pytest.fixture
 def db(tmp_path):
     database = Database(tmp_path / "test.db")
-    business_id = database.create_business("Peach", "Cafe", "new-york-ny")
+    business_id = database.create_business("Peach", "A café", "Café or coffee shop", "new-york-ny", ["weather"], 600)
     database.save_quote("q-1", business_id, {"legs": []}, 40000, "2030-01-01T00:00:00+00:00")
     database.business_id = business_id
     return database
@@ -99,4 +99,10 @@ def test_old_schema_is_rebuilt_but_settings_survive(tmp_path):
     conn.close()
     db = Database(path)
     assert db.get_setting("reserve_account_id") == "r-1"
-    assert "category" in {row["name"] for row in db.all("PRAGMA table_info(policies)")}
+    assert "topic" in {row["name"] for row in db.all("PRAGMA table_info(policies)")}
+
+
+def test_business_topics_round_trip(db):
+    assert db.get_business(db.business_id)["topics"] == ["weather"]
+    db.set_topics(db.business_id, ["rates", "fuel"])
+    assert db.get_business(db.business_id)["topics"] == ["rates", "fuel"]

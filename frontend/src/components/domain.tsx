@@ -1,35 +1,15 @@
-import {
-  Bot,
-  Building2,
-  Check,
-  CloudRain,
-  CloudSun,
-  Cpu,
-  Film,
-  Globe,
-  HeartPulse,
-  Landmark,
-  LineChart,
-  Shield,
-  Snowflake,
-  Sun,
-  Trophy,
-  Truck,
-  Users,
-  Vote,
-  type LucideIcon,
-} from 'lucide-react'
 import type { ReactNode } from 'react'
-import type { PerilId, PolicyStatus, S, Side } from '@/api/client'
+import type { PolicyStatus, TopicId } from '@/api/client'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/format'
+import { TOPICS } from '@/lib/topics'
 
 const STATUS: Record<PolicyStatus, { label: string; tone: 'neutral' | 'brand' | 'sky' | 'good' | 'sun' | 'bad' }> = {
   PENDING: { label: 'Setting up', tone: 'neutral' },
-  ACTIVE: { label: 'Active', tone: 'sky' },
+  ACTIVE: { label: 'Watching', tone: 'sky' },
   AWAITING_RESULT: { label: 'Awaiting result', tone: 'brand' },
   PAID: { label: 'Paid out', tone: 'good' },
-  EXPIRED: { label: 'Expired · no event', tone: 'neutral' },
+  EXPIRED: { label: "Didn't happen", tone: 'neutral' },
   REFUNDED: { label: 'Refunded', tone: 'neutral' },
   NEEDS_REVIEW: { label: 'Under review', tone: 'sun' },
 }
@@ -43,76 +23,13 @@ export function StatusBadge({ status }: { status: PolicyStatus }) {
   )
 }
 
-const BASIS: Record<S['Station']['basis_risk'], { label: string; tone: 'good' | 'sun' | 'bad' }> = {
-  low: { label: 'Low basis risk', tone: 'good' },
-  medium: { label: 'Medium basis risk', tone: 'sun' },
-  high: { label: 'High basis risk', tone: 'bad' },
-}
-
-export function BasisRiskBadge({ risk }: { risk: S['Station']['basis_risk'] }) {
-  const { label, tone } = BASIS[risk]
-  return <Badge tone={tone}>{label}</Badge>
-}
-
-const PERIL_ICON: Record<PerilId, LucideIcon> = { rain: CloudRain, heat: Sun, cold: Snowflake }
-
-const PERIL_TINT: Record<PerilId, string> = {
-  rain: 'bg-sky-soft text-sky',
-  heat: 'bg-sun-soft text-sun',
-  cold: 'bg-brand-soft text-brand',
-}
-
-export function PerilIcon({ peril, className }: { peril: PerilId; className?: string }) {
-  const Icon = PERIL_ICON[peril]
-  return (
-    <span className={cn('inline-flex size-10 shrink-0 items-center justify-center rounded-xl', PERIL_TINT[peril], className)}>
-      <Icon className="size-5" strokeWidth={1.8} />
-    </span>
-  )
-}
-
-const CATEGORY_ICON: Record<string, [LucideIcon, string]> = {
-  Economics: [Landmark, 'bg-brand-soft text-brand'],
-  Financials: [LineChart, 'bg-good-soft text-good'],
-  Politics: [Landmark, 'bg-sky-soft text-sky'],
-  Elections: [Vote, 'bg-sky-soft text-sky'],
-  'Climate and Weather': [CloudSun, 'bg-sky-soft text-sky'],
-  Sports: [Trophy, 'bg-sun-soft text-sun'],
-  Entertainment: [Film, 'bg-sun-soft text-sun'],
-  'Science and Technology': [Cpu, 'bg-brand-soft text-brand'],
-  AI: [Bot, 'bg-brand-soft text-brand'],
-  Health: [HeartPulse, 'bg-bad-soft text-bad'],
-  World: [Globe, 'bg-sky-soft text-sky'],
-  Social: [Users, 'bg-sun-soft text-sun'],
-  Companies: [Building2, 'bg-good-soft text-good'],
-  Business: [Building2, 'bg-good-soft text-good'],
-  Transportation: [Truck, 'bg-brand-soft text-brand'],
-}
-
-export function CategoryIcon({ category, className }: { category: string; className?: string }) {
-  const [Icon, tint] = CATEGORY_ICON[category] ?? [Shield, 'bg-ink/5 text-ink-soft']
+export function TopicIcon({ topic, className }: { topic: TopicId; className?: string }) {
+  const { icon: Icon, tint } = TOPICS[topic]
   return (
     <span className={cn('inline-flex size-10 shrink-0 items-center justify-center rounded-xl', tint, className)}>
       <Icon className="size-5" strokeWidth={1.8} />
     </span>
   )
-}
-
-export function Checkbox({ checked }: { checked: boolean }) {
-  return (
-    <span
-      className={cn(
-        'inline-flex size-4 shrink-0 items-center justify-center rounded border',
-        checked ? 'border-canvas bg-canvas text-ink' : 'border-line-strong',
-      )}
-    >
-      {checked && <Check className="size-3" />}
-    </span>
-  )
-}
-
-export function SideBadge({ side }: { side: Side }) {
-  return <Badge tone={side === 'yes' ? 'good' : 'bad'}>Pays if {side.toUpperCase()}</Badge>
 }
 
 export function Stat({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) {

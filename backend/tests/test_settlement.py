@@ -63,7 +63,7 @@ def test_no_expires_without_paying(world):
 
 def test_no_side_pays_when_the_market_settles_no(world):
     onboard(world, city_id=None)
-    _quote, policy = buy(world, tickers=(FED_HOLD,), payout=100, peril=None, side="no")
+    _quote, policy = buy(world, tickers=(FED_HOLD,), payout=100, side="no")
     world.clock.advance(days=31)
     world.market.settle(FED_HOLD, "no")
     _settle(world)
@@ -74,7 +74,7 @@ def test_no_side_pays_when_the_market_settles_no(world):
 
 def test_no_side_expires_when_the_market_settles_yes(world):
     onboard(world, city_id=None)
-    _quote, policy = buy(world, tickers=(FED_HOLD,), payout=100, peril=None, side="no")
+    _quote, policy = buy(world, tickers=(FED_HOLD,), payout=100, side="no")
     world.clock.advance(days=31)
     world.market.settle(FED_HOLD, "yes")
     _settle(world)

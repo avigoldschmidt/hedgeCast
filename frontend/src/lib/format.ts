@@ -19,14 +19,6 @@ export function pct(value: number) {
   return `${Math.round(value * 100)}%`
 }
 
-export function dayLabel(isoDate: string) {
-  return new Date(`${isoDate}T12:00:00`).toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  })
-}
-
 export function shortDate(iso: string) {
   const when = new Date(iso)
   return when.toLocaleDateString('en-US', {

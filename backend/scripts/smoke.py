@@ -42,16 +42,18 @@ def reuse_reserve(service):
         service.db.set_setting(nessie.RESERVE_SETTING, row[0])
 
 
-def first_coverable_quote(client, events, tries=8):
-    """Quotes $5 of NO-side cover on the most traded markets until one has enough depth."""
+def first_coverable_quote(client, cards, tries=8):
+    """Quotes $5 of NO-side cover on forecast choices until one has enough depth."""
     candidates = [
-        market["ticker"]
-        for event in events
-        for market in event["markets"]
-        if market["yes_probability"] is not None and 0.2 <= market["yes_probability"] <= 0.8
+        (card, choice["ticker"])
+        for card in cards
+        for choice in card["choices"]
+        if choice["chance"] is not None and 0.2 <= choice["chance"] <= 0.8
     ]
-    for ticker in candidates[:tries]:
-        response = client.post("/api/quotes", json={"legs": [{"ticker": ticker, "side": "no"}], "payout_dollars": 5})
+    for card, ticker in candidates[:tries]:
+        plan = {key: card[key] for key in ("topic", "title", "why", "catch")}
+        body = {"legs": [{"ticker": ticker, "side": "no"}], "payout_dollars": 5, "plan": plan}
+        response = client.post("/api/quotes", json=body)
         if response.status_code == 200 and not response.json()["thin_book"]["short"]:
             print(f"ok   quote $5 NO-side cover on {ticker}")
             return response.json()
@@ -64,22 +66,28 @@ def main():
     client = TestClient(create_app(service, worker=False))
     print(f"market data: {service.market_data.source}   hedge mode: {service.executor.mode}")
 
-    step("create business", client.post("/api/businesses", json={"name": "Smoke Test Bakery", "industry": "Bakery", "city_id": "new-york-ny"}))
+    created = step(
+        "create business",
+        client.post(
+            "/api/businesses",
+            json={"name": "Smoke Test Bakery", "description": "A neighborhood bakery with outdoor seating", "city_id": "new-york-ny"},
+        ),
+    )
+    print(f"     profile ({service.advisor.name if service.advisor else 'no advisor'}): {created['industry']} · {', '.join(created['topics'])}")
     business = step("link Nessie checking", client.post("/api/me/bank"))
     opening = business["bank"]["balance_cents"]
     print(f"     checking balance ${opening / 100:,.2f}")
 
-    weather = step("weather shortcut from live Kalshi", client.get("/api/weather", params={"peril": "rain"}))
-    print(f"     {weather['station']['name']} · {sum(len(d['triggers']) for d in weather['days'])} rain markets open")
-
-    search = step("search live Kalshi markets", client.get("/api/markets"))
-    print(f"     {len(search['events'])} events across {', '.join(search['categories'][:6])}…")
-    quote = first_coverable_quote(client, search["events"])
+    forecast = step("forecast from live Kalshi", client.get("/api/forecast"))
+    print(f"     {len(forecast['cards'])} plans · {'tailored' if forecast['tailored'] else 'plain wording'}")
+    for card in forecast["cards"][:6]:
+        print(f"     {card['topic']:<8} {card['title']}")
+    quote = first_coverable_quote(client, forecast["cards"])
     if quote is None:
         print("SKIP no liquid market could cover $5 on the NO side right now")
         return
     leg = quote["legs"][0]
-    print(f"     {quote['category']} · {leg['label']} · NO at {leg['avg_price']}")
+    print(f"     {quote['topic']} · {leg['label']} · NO at {leg['avg_price']}")
     print(f"     premium ${quote['premium_cents'] / 100:,.2f}  breakdown {quote['breakdown']}")
 
     policy = step("buy cover (paper hedge)", client.post("/api/policies", json={"quote_id": quote["id"]}))

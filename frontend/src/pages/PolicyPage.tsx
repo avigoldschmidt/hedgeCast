@@ -1,11 +1,28 @@
 import { useQuery } from '@tanstack/react-query'
-import { ArrowDownLeft, ArrowLeft, ArrowUpRight, CheckCircle2, CircleDashed, PartyPopper, RotateCcw, XCircle } from 'lucide-react'
+import { ArrowDownLeft, ArrowLeft, ArrowUpRight, CheckCircle2, PartyPopper } from 'lucide-react'
+import type { ReactNode } from 'react'
 import { Link, useLocation, useParams } from 'react-router'
-import { api, type S } from '@/api/client'
-import { BasisRiskBadge, CategoryIcon, ErrorNote, Loading, SideBadge, Stat, StatusBadge } from '@/components/domain'
+import { api, type PolicyStatus, type S } from '@/api/client'
+import { ErrorNote, Loading, StatusBadge, TopicIcon } from '@/components/domain'
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn, dateTime, money } from '@/lib/format'
 import { OPEN_STATUSES } from '@/lib/status'
+
+const REACHED: Record<PolicyStatus, number> = {
+  PENDING: 0,
+  ACTIVE: 1,
+  AWAITING_RESULT: 2,
+  NEEDS_REVIEW: 2,
+  PAID: 3,
+  EXPIRED: 3,
+  REFUNDED: 3,
+}
+
+const FINAL: Partial<Record<PolicyStatus, string>> = {
+  PAID: 'Paid into checking',
+  EXPIRED: "Didn't happen · no payout",
+  REFUNDED: 'Premium refunded',
+}
 
 export function PolicyPage() {
   const { id } = useParams()
@@ -20,169 +37,168 @@ export function PolicyPage() {
   if (policy.isPending) return <Loading />
   if (policy.isError) return <ErrorNote error={policy.error} />
   const p = policy.data
+  const multi = p.legs.length > 1
 
   return (
-    <>
+    <div className="mx-auto max-w-3xl">
       <Link to="/policies" className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
         <ArrowLeft className="size-4" /> Policies
       </Link>
 
       {justBound && p.status === 'ACTIVE' && (
-        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-good/25 bg-good-soft px-5 py-4 text-sm">
-          <CheckCircle2 className="size-5 text-good" />
-          <span>
-            <strong>You're covered.</strong> Premium of {money(p.premium_cents)} was charged and the cover is active. We'll
-            watch the official result and pay you automatically.
-          </span>
-        </div>
+        <Banner icon={<CheckCircle2 className="size-5 text-good" />}>
+          <strong>You're covered.</strong> {money(p.premium_cents)} was charged. We'll watch the official result and pay you
+          automatically.
+        </Banner>
       )}
       {p.status === 'PAID' && (
-        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-good/25 bg-good-soft px-5 py-4 text-sm">
-          <PartyPopper className="size-5 text-good" />
-          <span>
-            <strong>{money(p.paid_cents)} was paid into your checking account.</strong> No claim needed.
-          </span>
-        </div>
+        <Banner icon={<PartyPopper className="size-5 text-good" />}>
+          <strong>{money(p.paid_cents)} was paid into your checking account.</strong> No claim needed.
+        </Banner>
       )}
 
-      <div className="flex flex-wrap items-start gap-5">
-        <CategoryIcon category={p.category} className="size-14 rounded-2xl" />
+      <div className="flex items-start gap-4">
+        <TopicIcon topic={p.topic} className="size-12 rounded-2xl" />
         <div className="flex-1">
-          <h1 className="font-display text-3xl font-semibold tracking-tight">{p.title}</h1>
+          <h1 className="font-display text-3xl leading-tight font-semibold tracking-tight">{p.title}</h1>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
             <StatusBadge status={p.status} />
-            <span>Policy #{p.id}</span>
-            <span>·</span>
-            <span>{p.category}</span>
-            <span>·</span>
-            <span>Bought {dateTime(p.created_at)}</span>
+            <span>
+              Policy #{p.id} · bought {dateTime(p.created_at)}
+            </span>
           </div>
         </div>
       </div>
 
-      <Card className="mt-8 grid grid-cols-2 gap-6 p-6 md:grid-cols-4">
-        <Stat label={p.legs.length > 1 ? 'Payout per outcome' : 'Payout'} value={money(p.payout_each_cents)} />
-        <Stat label="Maximum payout" value={money(p.max_payout_cents)} />
-        <Stat label="Premium" value={money(p.premium_cents)} />
-        <Stat label="Paid to you" value={<span className={p.paid_cents > 0 ? 'text-good' : ''}>{money(p.paid_cents)}</span>} />
+      <Card className="mt-8">
+        <CardBody>
+          <div className="grid grid-cols-3 gap-4">
+            <Figure label={multi ? 'Pays per outcome' : 'Pays'} value={money(p.payout_each_cents)} />
+            <Figure label="You paid" value={money(p.premium_cents)} />
+            <Figure label="Paid to you" value={<span className={p.paid_cents > 0 ? 'text-good' : ''}>{money(p.paid_cents)}</span>} />
+          </div>
+          {p.why && <p className="mt-5 leading-relaxed text-ink-soft">{p.why}</p>}
+          {p.catch && (
+            <div className="mt-4 rounded-xl bg-canvas px-4 py-3 text-sm leading-relaxed text-ink-soft">
+              <div className="mb-0.5 text-xs font-semibold tracking-wide text-muted uppercase">The catch</div>
+              {p.catch}
+            </div>
+          )}
+          <Progress policy={p} />
+        </CardBody>
       </Card>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_360px]">
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>What's covered</CardTitle>
-              {p.basis_risk && <BasisRiskBadge risk={p.basis_risk} />}
-            </CardHeader>
-            <CardBody>
-              <p className="leading-relaxed text-ink-soft">{p.terms}</p>
-              <ul className="mt-5 divide-y divide-line rounded-xl border border-line">
-                {p.legs.map((leg) => (
-                  <li key={leg.ticker} className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm">
-                    <LegResult leg={leg} />
-                    <span className="min-w-0 flex-1 font-medium">{leg.label}</span>
-                    <SideBadge side={leg.side} />
-                    <span className="text-muted">{legStatus(leg)}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardBody>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Money</CardTitle>
-            </CardHeader>
-            <CardBody className="pt-3">
-              {p.movements.length === 0 ? (
-                <p className="text-sm text-muted">No money has moved yet.</p>
-              ) : (
-                <ul className="divide-y divide-line">
-                  {p.movements.map((movement, index) => (
-                    <Movement key={index} movement={movement} />
-                  ))}
-                </ul>
-              )}
-            </CardBody>
-          </Card>
-
-          <details className="group rounded-2xl border border-line bg-surface shadow-card">
-            <summary className="flex cursor-pointer list-none items-center justify-between px-6 py-4 text-[15px] font-semibold">
-              Under the hood
-              <span className="text-xs font-normal text-muted">Market contracts backing this policy</span>
-            </summary>
-            <div className="overflow-x-auto border-t border-line px-6 py-4">
-              <table className="w-full text-sm">
-                <thead className="text-left text-xs text-muted uppercase">
-                  <tr>
-                    <th className="pb-2 font-medium">Market</th>
-                    <th className="pb-2 font-medium">Contracts</th>
-                    <th className="pb-2 font-medium">Fill price</th>
-                    <th className="pb-2 font-medium">Cost</th>
-                    <th className="pb-2 font-medium">Closes</th>
-                  </tr>
-                </thead>
-                <tbody className="num">
-                  {p.legs.map((leg) => (
-                    <tr key={leg.ticker} className="border-t border-line">
-                      <td className="py-2 font-mono text-xs">{leg.ticker}</td>
-                      <td className="py-2">{leg.contracts.toLocaleString()}</td>
-                      <td className="py-2">{leg.fill_price ? `${(Number(leg.fill_price) * 100).toFixed(1)}¢` : '—'}</td>
-                      <td className="py-2">{money(leg.cost_cents)}</td>
-                      <td className="py-2">{dateTime(leg.close_time)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </details>
-        </div>
-
-        <Card className="self-start">
-          <CardHeader>
-            <CardTitle>Timeline</CardTitle>
-          </CardHeader>
-          <CardBody className="pt-4">
-            <ol className="relative space-y-5 border-l border-line pl-5">
-              {p.events.map((event, index) => (
-                <li key={index} className="relative">
-                  <span
-                    className={cn(
-                      'absolute top-1 -left-[25px] size-2.5 rounded-full ring-4 ring-surface',
-                      index === p.events.length - 1 ? 'bg-brand' : 'bg-line-strong',
-                    )}
-                  />
-                  <div className="text-sm text-ink">{event.message}</div>
-                  <div className="mt-0.5 text-xs text-muted">{dateTime(event.created_at)}</div>
-                </li>
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle>Money</CardTitle>
+        </CardHeader>
+        <CardBody className="pt-3">
+          {p.movements.length === 0 ? (
+            <p className="text-sm text-muted">No money has moved yet.</p>
+          ) : (
+            <ul className="divide-y divide-line">
+              {p.movements.map((movement, index) => (
+                <Movement key={index} movement={movement} />
               ))}
-            </ol>
-          </CardBody>
-        </Card>
-      </div>
-    </>
+            </ul>
+          )}
+        </CardBody>
+      </Card>
+
+      <details className="mt-6 rounded-2xl border border-line bg-surface shadow-card">
+        <summary className="flex cursor-pointer list-none items-center justify-between px-6 py-4 text-[15px] font-semibold">
+          Under the hood
+          <span className="text-xs font-normal text-muted">Exact terms, backing contracts, and history</span>
+        </summary>
+        <div className="space-y-5 border-t border-line px-6 py-5 text-sm">
+          <p className="leading-relaxed text-ink-soft">{p.terms}</p>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="text-left text-xs text-muted uppercase">
+                <tr>
+                  <th className="pb-2 font-medium">Market</th>
+                  <th className="pb-2 font-medium">Pays if</th>
+                  <th className="pb-2 font-medium">Contracts</th>
+                  <th className="pb-2 font-medium">Fill</th>
+                  <th className="pb-2 font-medium">Result</th>
+                </tr>
+              </thead>
+              <tbody className="num">
+                {p.legs.map((leg) => (
+                  <tr key={leg.ticker} className="border-t border-line">
+                    <td className="py-2 pr-3">
+                      <div className="font-sans">{leg.label}</div>
+                      <div className="font-mono text-xs text-muted">{leg.ticker}</div>
+                    </td>
+                    <td className="py-2 uppercase">{leg.side}</td>
+                    <td className="py-2">{leg.contracts.toLocaleString()}</td>
+                    <td className="py-2">{leg.fill_price ? `${(Number(leg.fill_price) * 100).toFixed(1)}¢` : '—'}</td>
+                    <td className="py-2 uppercase">{leg.result ?? '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <ol className="space-y-2 border-t border-line pt-4">
+            {p.events.map((event, index) => (
+              <li key={index} className="flex gap-3">
+                <span className="w-32 shrink-0 text-xs text-muted">{dateTime(event.created_at)}</span>
+                <span className="text-ink-soft">{event.message}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </details>
+    </div>
   )
 }
 
-function LegResult({ leg }: { leg: S['PolicyLeg'] }) {
-  if (leg.result === 'void') return <RotateCcw className="size-4 text-sun" />
-  if (leg.result === leg.side) return <CheckCircle2 className="size-4 text-good" />
-  if (leg.result) return <XCircle className="size-4 text-muted" />
-  return <CircleDashed className="size-4 text-muted" />
+function Progress({ policy }: { policy: S['PolicyDetail'] }) {
+  const reached = REACHED[policy.status]
+  const steps = [
+    { label: 'Watching', sub: `Until ${dateTime(policy.closes_at)}` },
+    { label: 'Official result', sub: policy.status === 'NEEDS_REVIEW' ? 'Our risk desk is checking it' : 'From Kalshi' },
+    { label: FINAL[policy.status] ?? 'Paid if it goes your way', sub: 'Straight to checking' },
+  ]
+  return (
+    <ol className="mt-6 grid grid-cols-3 gap-3 border-t border-line pt-5">
+      {steps.map((step, index) => {
+        const lit = index < reached
+        const current = lit && index === reached - 1 && reached < 3
+        return (
+          <li key={step.label}>
+            <div className={cn('h-1.5 rounded-full', lit ? (current ? 'bg-brand' : 'bg-good') : 'bg-ink/5')} />
+            <div className={cn('mt-2.5 text-sm font-medium', lit ? 'text-ink' : 'text-muted')}>{step.label}</div>
+            <div className="text-xs text-muted">{step.sub}</div>
+          </li>
+        )
+      })}
+    </ol>
+  )
 }
 
-function legStatus(leg: S['PolicyLeg']) {
-  if (leg.result === 'void') return 'Market voided'
-  if (leg.result === leg.side) return `Settled ${leg.result.toUpperCase()} · pays out`
-  if (leg.result) return `Settled ${leg.result.toUpperCase()} · no payout`
-  if (new Date(leg.close_time).getTime() < Date.now()) return 'Waiting for official result'
-  return `Watching until ${dateTime(leg.close_time)}`
+function Figure({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div>
+      <div className="text-xs text-muted">{label}</div>
+      <div className="num mt-0.5 text-xl font-semibold">{value}</div>
+    </div>
+  )
+}
+
+function Banner({ icon, children }: { icon: ReactNode; children: ReactNode }) {
+  return (
+    <div className="mb-6 flex items-center gap-3 rounded-2xl border border-good/25 bg-good-soft px-5 py-4 text-sm">
+      {icon}
+      <span>{children}</span>
+    </div>
+  )
 }
 
 const MOVEMENT_LABEL: Record<S['MoneyMovement']['kind'], string> = {
-  premium: 'Premium charged',
-  refund: 'Premium refunded',
-  payout: 'Payout sent',
+  premium: 'Cover paid',
+  refund: 'Refund',
+  payout: 'Payout',
 }
 
 function Movement({ movement }: { movement: S['MoneyMovement'] }) {
