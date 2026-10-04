@@ -102,6 +102,20 @@ def test_old_schema_is_rebuilt_but_settings_survive(tmp_path):
     assert "topic" in {row["name"] for row in db.all("PRAGMA table_info(policies)")}
 
 
+def test_wiped_db_file_reapplies_schema_on_next_connect(tmp_path):
+    """make reset-db deletes the file while a long-lived Database may still be in memory."""
+    path = tmp_path / "live.db"
+    db = Database(path)
+    db.create_business("Peach", "", "Café or coffee shop", "new-york-ny", ["weather"], 600)
+    path.unlink()
+    for suffix in ("-wal", "-shm"):
+        sidecar = path.parent / (path.name + suffix)
+        if sidecar.exists():
+            sidecar.unlink()
+    assert db.list_businesses() == []
+    assert db.all("PRAGMA table_info(policies)")
+
+
 def test_business_topics_round_trip(db):
     assert db.get_business(db.business_id)["topics"] == ["weather"]
     db.set_topics(db.business_id, ["rates", "fuel"])

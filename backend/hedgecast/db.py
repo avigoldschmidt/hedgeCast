@@ -112,13 +112,17 @@ class Database:
         self.path = Path(path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.connect() as conn:
-            conn.execute("PRAGMA journal_mode = WAL")
-            if conn.execute("PRAGMA user_version").fetchone()[0] != SCHEMA_VERSION:
-                # Hackathon-grade migration: rebuild data tables, keep settings (the Nessie reserve account).
-                for table in DATA_TABLES:
-                    conn.execute(f"DROP TABLE IF EXISTS {table}")
-                conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
-            conn.executescript(SCHEMA)
+            pass  # connect() applies schema; also heals after make reset-db while the API is up
+
+    @staticmethod
+    def _prepare(conn):
+        conn.execute("PRAGMA journal_mode = WAL")
+        if conn.execute("PRAGMA user_version").fetchone()[0] != SCHEMA_VERSION:
+            # Hackathon-grade migration: rebuild data tables, keep settings (the Nessie reserve account).
+            for table in DATA_TABLES:
+                conn.execute(f"DROP TABLE IF EXISTS {table}")
+            conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+        conn.executescript(SCHEMA)
 
     @contextmanager
     def connect(self):
@@ -127,6 +131,8 @@ class Database:
         conn.execute("PRAGMA foreign_keys = ON")
         try:
             with conn:
+                # Re-apply schema when the file was wiped (reset-db) or is a fresh empty SQLite DB.
+                self._prepare(conn)
                 yield conn
         finally:
             conn.close()
