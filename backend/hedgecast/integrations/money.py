@@ -11,7 +11,7 @@ class BankError(Exception):
 
 class NessieBank:
     unit_cents = 100
-    name = "Capital One Nessie sandbox"
+    name = "Capital One Nessie"
 
     def __init__(self, settings):
         nessie.use_settings(settings.get_setting, settings.set_setting)

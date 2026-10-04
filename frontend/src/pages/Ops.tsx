@@ -54,7 +54,7 @@ export function Ops() {
       <header className="border-b border-line bg-surface">
         <div className="mx-auto flex h-16 max-w-6xl items-center gap-4 px-6">
           <Logo />
-          <Badge tone="sun">Risk desk · internal</Badge>
+          <Badge tone="sun">Settlement · internal</Badge>
           <Link to="/" className="ml-auto inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink">
             <ArrowLeft className="size-4" /> Customer app
           </Link>
@@ -67,15 +67,17 @@ export function Ops() {
           <>
             <Card className="grid grid-cols-2 gap-6 p-6 md:grid-cols-4">
               <Stat
-                label="Hedge mode"
-                value={<span className="capitalize">{ops.data.hedge_mode}</span>}
-                sub={ops.data.hedge_mode === 'paper' ? 'Fills simulated against live books' : 'Orders sent to Kalshi'}
+                label="Market books"
+                value={<span className="text-base">Live Kalshi</span>}
+                sub={ops.data.data_source}
               />
-              <Stat label="Market data" value={<span className="text-base">{ops.data.data_source}</span>} />
               <Stat
-                label="Claim reserve"
+                label="Company float"
                 value={ops.data.reserve_balance_cents != null ? money(ops.data.reserve_balance_cents) : '—'}
-                sub={ops.data.reserve_error ?? 'Funds payouts to customers (not their checking).'}
+                sub={
+                  ops.data.reserve_error ??
+                  'Customer premiums land here; payouts leave from here. Live hedges would buy Kalshi from this float.'
+                }
               />
               <Stat
                 label="Settlement worker"
@@ -85,6 +87,15 @@ export function Ops() {
                     ? `Last run ${timeAgo(ops.data.worker.last_run_at)} · ${ops.data.worker.last_result ?? ''}`
                     : 'Not run yet'
                 }
+              />
+              <Stat
+                label="Open on book"
+                value={
+                  <span className="num text-base">
+                    {(ops.data.counts.ACTIVE ?? 0) + (ops.data.counts.AWAITING_RESULT ?? 0)}
+                  </span>
+                }
+                sub="Policies waiting on a market result"
               />
             </Card>
 
@@ -111,8 +122,8 @@ export function Ops() {
               <CardHeader>
                 <CardTitle>Book</CardTitle>
                 <span className="text-xs text-muted">
-                  Demo resolve sets the market result. Customer is paid only if that matches the side they bought.
-                  Weather rain cover is YES — click “It happened” to pay.
+                  Settle a market the way the worker does when Kalshi posts the official result. Customer is paid only if
+                  that matches the side they bought. Rain cover is YES — Settle YES to pay.
                 </span>
               </CardHeader>
               <CardBody className="overflow-x-auto pt-3">
@@ -142,10 +153,7 @@ export function Ops() {
                                 <TopicIcon topic={policy.topic} className="size-8 rounded-lg" />
                                 <div>
                                   <div className="font-medium">#{policy.id} · {policy.title}</div>
-                                  <div className="text-xs text-muted">
-                                    {dateTime(policy.created_at)}
-                                    {policy.simulated && ' · simulated fill'}
-                                  </div>
+                                  <div className="text-xs text-muted">{dateTime(policy.created_at)}</div>
                                 </div>
                               </div>
                             </td>
@@ -168,7 +176,7 @@ export function Ops() {
                                       title={resolveHint(policy, 'yes')}
                                       onClick={() => resolve.mutate({ id: policy.id, result: 'yes' })}
                                     >
-                                      It happened (YES)
+                                      Settle YES
                                     </Button>
                                     <Button
                                       size="sm"
@@ -177,7 +185,7 @@ export function Ops() {
                                       title={resolveHint(policy, 'no')}
                                       onClick={() => resolve.mutate({ id: policy.id, result: 'no' })}
                                     >
-                                      It didn’t (NO)
+                                      Settle NO
                                     </Button>
                                   </span>
                                   <span className="text-[11px] text-muted">

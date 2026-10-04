@@ -38,7 +38,7 @@ class Settlement:
             for leg in self.db.legs(policy_id):
                 if leg["result"] is None:
                     self.db.update_leg(leg["id"], result=result, forced=1)
-            self.db.add_event(policy_id, "demo_resolve", f"Demo: the risk desk settled the markets {result.upper()}.")
+            self.db.add_event(policy_id, "demo_resolve", f"Settlement: markets settled {result.upper()}.")
             self._advance(self.db.get_policy(policy_id), poll=False)
             return self.db.get_policy(policy_id)
 

@@ -11,7 +11,7 @@ async function onboard(page: Page, name: string) {
 
 async function protect(page: Page, preset: string) {
   await page.getByRole('button', { name: 'Connect checking' }).click()
-  await expect(page.getByText(/Charged to checking/)).toBeVisible()
+  await expect(page.getByText(/Checking ••/)).toBeVisible()
   await page.getByRole('button', { name: preset, exact: true }).click()
   const button = page.getByRole('button', { name: /^Protect for \$\d+/ })
   await expect(button).toBeEnabled()
@@ -33,11 +33,11 @@ test('weather wizard: protect against rain, resolve, get paid', async ({ page })
   const policyUrl = page.url()
 
   await page.goto('/ops')
-  await page.getByRole('button', { name: 'It happened (YES)' }).first().click()
+  await page.getByRole('button', { name: 'Settle YES' }).first().click()
   await expect(page.getByText('Paid out').first()).toBeVisible()
 
   await page.goto(policyUrl)
-  await expect(page.getByText('$300 was paid into your checking account.')).toBeVisible()
+  await expect(page.getByText(/\+\$300 paid into checking/)).toBeVisible()
 })
 
 test('rates wizard: find Fed cover and protect', async ({ page }) => {

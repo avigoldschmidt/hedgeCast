@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { LogOut } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router'
 import { api, type S } from '@/api/client'
 import { Logo } from '@/components/Logo'
@@ -21,6 +21,26 @@ export function AppShell({ business }: { business: S['Business'] }) {
     refetchInterval: (query) => (query.state.data?.bank.linked ? 10000 : false),
   })
   const current = me.data ?? business
+  const balanceCents = current.bank.linked ? (current.bank.balance_cents ?? null) : null
+  const [flash, setFlash] = useState<{ delta: number; key: number } | null>(null)
+  const prevBalance = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (balanceCents == null) {
+      prevBalance.current = null
+      return
+    }
+    if (prevBalance.current != null && balanceCents !== prevBalance.current) {
+      setFlash({ delta: balanceCents - prevBalance.current, key: Date.now() })
+    }
+    prevBalance.current = balanceCents
+  }, [balanceCents])
+
+  useEffect(() => {
+    if (!flash) return
+    const timer = window.setTimeout(() => setFlash(null), 4500)
+    return () => window.clearTimeout(timer)
+  }, [flash])
 
   async function switchBusiness() {
     await api.endSession()
@@ -28,8 +48,7 @@ export function AppShell({ business }: { business: S['Business'] }) {
     navigate('/welcome')
   }
 
-  const checking =
-    current.bank.linked && current.bank.balance_cents != null ? money(current.bank.balance_cents) : null
+  const checking = balanceCents != null ? money(balanceCents) : null
 
   return (
     <div className="min-h-screen">
@@ -55,27 +74,41 @@ export function AppShell({ business }: { business: S['Business'] }) {
               </NavLink>
             ))}
           </nav>
-          <div className="ml-auto flex items-center gap-3">
-            <div className="text-right leading-tight">
-              <div className="text-sm font-medium text-ink">{current.name}</div>
-              <div className="text-xs text-muted">
-                {checking ? (
-                  <>
-                    Checking · <span className="num">{checking}</span>
-                  </>
-                ) : current.city ? (
-                  `${current.city.name}, ${current.city.state}`
-                ) : (
-                  current.industry
-                )}
-              </div>
+          <div className="ml-auto text-right leading-tight">
+            <div className="text-sm font-medium text-ink">{current.name}</div>
+            <div className="text-xs text-muted">
+              {checking ? (
+                <span
+                  className={cn(
+                    'inline-flex items-center gap-1.5 transition-colors',
+                    flash && (flash.delta > 0 ? 'text-good' : flash.delta < 0 ? 'text-ink' : ''),
+                  )}
+                >
+                  Checking · <span className="num font-medium text-ink">{checking}</span>
+                  {flash && flash.delta !== 0 && (
+                    <span
+                      key={flash.key}
+                      className={cn('num font-semibold', flash.delta > 0 ? 'text-good' : 'text-ink-soft')}
+                    >
+                      {flash.delta > 0 ? '+' : '−'}
+                      {money(Math.abs(flash.delta))}
+                    </span>
+                  )}
+                </span>
+              ) : current.bank.linked && current.bank.error ? (
+                <span className="text-sun">{current.bank.error}</span>
+              ) : current.city ? (
+                `${current.city.name}, ${current.city.state}`
+              ) : (
+                current.industry
+              )}
             </div>
             <button
+              type="button"
               onClick={switchBusiness}
-              title="Switch business"
-              className="rounded-lg p-2 text-muted transition-colors hover:bg-ink/5 hover:text-ink"
+              className="mt-0.5 text-xs text-muted underline-offset-2 hover:text-ink hover:underline"
             >
-              <LogOut className="size-4" />
+              Not this business?
             </button>
           </div>
         </div>
@@ -84,9 +117,9 @@ export function AppShell({ business }: { business: S['Business'] }) {
         <Outlet />
       </main>
       <footer className="mx-auto flex max-w-5xl items-center justify-between border-t border-line px-6 py-6 text-xs text-muted">
-        <span>Prices and results from Kalshi. Bank movements via Capital One Nessie sandbox.</span>
+        <span>Prices and results from Kalshi. Bank movements via Capital One Nessie.</span>
         <Link to="/ops" className="hover:text-ink">
-          Risk desk
+          Settlement
         </Link>
       </footer>
     </div>

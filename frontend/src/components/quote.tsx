@@ -21,9 +21,13 @@ export function Section({ number, title, children }: { number: number; title: st
   )
 }
 
+/** Cap presets so sandbox checking (~$1,000) can still fund a typical premium. */
+const PRESET_CAP_DOLLARS = 800
+
 function presetsFor(badDay: number) {
   const round = (value: number) => Math.max(10, Math.round(value / 50) * 50)
-  return [...new Set([round(badDay / 2), round(badDay), round(badDay * 2)])]
+  const raw = [round(badDay / 2), round(badDay), round(badDay * 2)].map((value) => Math.min(value, PRESET_CAP_DOLLARS))
+  return [...new Set(raw)]
 }
 
 export function PayoutPicker({ value, onChange, badDay }: { value: number; onChange: (value: number) => void; badDay: number }) {
@@ -127,7 +131,7 @@ export function QuoteCheckout({ request, onPayout }: { request: S['QuoteRequest'
           </button>
         ) : (
           <span className="num inline-flex items-center gap-1.5 text-xs font-medium text-brand">
-            <Lock className="size-3" /> Locked · {secondsLeft}s
+            <Lock className="size-3" /> Price holds · {secondsLeft}s
           </span>
         )}
       </div>

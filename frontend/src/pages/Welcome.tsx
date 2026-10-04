@@ -11,7 +11,10 @@ import { Field, Input, Select } from '@/components/ui/field'
 const PITCH = [
   { title: 'Pick a kind of cover', body: 'Weather, rates, fuel, sports — start with the risk that matters.' },
   { title: 'Answer a few questions', body: 'We narrow open markets to the days, levels, or outcomes that fit.' },
-  { title: 'Get paid automatically', body: 'When the official result confirms it, money lands in checking.' },
+  {
+    title: 'Get paid automatically',
+    body: 'When the official result confirms it, money lands in checking — no claim form.',
+  },
 ]
 
 export function Welcome() {
@@ -107,8 +110,13 @@ export function Welcome() {
                 ))}
               </Select>
             </Field>
-            <ErrorNote error={create.error} />
-            <Button type="submit" size="lg" className="w-full" disabled={create.isPending}>
+            <ErrorNote error={create.error ?? cities.error ?? industries.error} />
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full"
+              disabled={create.isPending || cities.isPending || industries.isPending || !cities.data?.length || !industries.data?.length}
+            >
               {create.isPending ? 'Setting up…' : 'Find cover'} <ArrowRight className="size-4" />
             </Button>
           </form>

@@ -53,7 +53,7 @@ def test_a_quote_buys_only_once(world):
 def test_expired_quote_is_refused(world):
     onboard(world)
     quote = get_quote(world)
-    world.clock.advance(seconds=60)
+    world.clock.advance(seconds=120)
     assert _bind(world, quote).status_code == 409
     assert _checking(world) == OPENING
 

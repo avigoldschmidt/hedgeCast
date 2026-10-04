@@ -36,7 +36,7 @@ export function PolicyPage() {
   const me = useQuery({
     queryKey: ['me'],
     queryFn: api.me,
-    enabled: policy.data?.status === 'PAID',
+    enabled: Boolean(policy.data && (policy.data.status === 'PAID' || (justBound && policy.data.status === 'ACTIVE'))),
     refetchOnWindowFocus: true,
   })
 
@@ -44,8 +44,8 @@ export function PolicyPage() {
   if (policy.isError) return <ErrorNote error={policy.error} />
   const p = policy.data
   const multi = p.legs.length > 1
-  const checking =
-    p.status === 'PAID' && me.data?.bank.balance_cents != null ? money(me.data.bank.balance_cents) : null
+  const checkingCents = me.data?.bank.balance_cents ?? null
+  const checking = checkingCents != null ? money(checkingCents) : null
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -55,17 +55,27 @@ export function PolicyPage() {
 
       {justBound && p.status === 'ACTIVE' && (
         <Banner icon={<CheckCircle2 className="size-5 text-good" />}>
-          <strong>You're covered.</strong> {money(p.premium_cents)} was charged. We'll watch the official result and pay you
-          automatically.
+          <strong>You're covered.</strong>{' '}
+          <span className="num">−{money(p.premium_cents)}</span> left checking.
+          {checking && (
+            <>
+              {' '}
+              Balance is now <span className="num font-semibold">{checking}</span>.
+            </>
+          )}{' '}
+          We'll watch the official result and pay you automatically — no claim form.
         </Banner>
       )}
       {p.status === 'PAID' && (
         <Banner icon={<PartyPopper className="size-5 text-good" />}>
-          <strong>{money(p.paid_cents)} was paid into your checking account.</strong> No claim needed.
+          <strong>
+            <span className="num">+{money(p.paid_cents)}</span> paid into checking.
+          </strong>{' '}
+          No claim needed.
           {checking && (
             <>
               {' '}
-              Checking balance is now <span className="num">{checking}</span>.
+              Balance is now <span className="num font-semibold">{checking}</span>.
             </>
           )}
         </Banner>
@@ -94,7 +104,7 @@ export function PolicyPage() {
           {p.why && <p className="mt-5 leading-relaxed text-ink-soft">{p.why}</p>}
           {p.catch && (
             <div className="mt-4 rounded-xl bg-canvas px-4 py-3 text-sm leading-relaxed text-ink-soft">
-              <div className="mb-0.5 text-xs font-semibold tracking-wide text-muted uppercase">The catch</div>
+              <div className="mb-0.5 text-xs font-semibold tracking-wide text-muted uppercase">What this covers</div>
               {p.catch}
             </div>
           )}

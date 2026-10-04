@@ -32,7 +32,7 @@ def worker_enabled():
     return _env("HEDGECAST_WORKER", "1") == "1"
 
 
-QUOTE_TTL_SECONDS = 30
+QUOTE_TTL_SECONDS = 90
 SLIPPAGE_BUFFER = "0.02"
 PLATFORM_FEE = "0.10"
 EXCHANGE_FEE_RATE = "0.07"
