@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, Play } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router'
-import { api } from '@/api/client'
+import { api, type S } from '@/api/client'
 import { ErrorNote, Loading, Stat, StatusBadge, TopicIcon } from '@/components/domain'
 import { Logo } from '@/components/Logo'
 import { Badge } from '@/components/ui/badge'
@@ -9,18 +10,43 @@ import { Button } from '@/components/ui/button'
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/card'
 import { dateTime, money, shortDate, timeAgo } from '@/lib/format'
 
+type ResolveNote = { id: number; message: string; good: boolean }
+
+function paysIfLabel(side: S['OpsPolicy']['covered_side']) {
+  if (side === 'yes') return 'Pays if YES'
+  if (side === 'no') return 'Pays if NO'
+  return 'Mixed sides'
+}
+
+function resolveHint(policy: S['OpsPolicy'], result: 'yes' | 'no') {
+  if (policy.covered_side === 'mixed') return 'May pay some legs'
+  if (policy.covered_side === result) return `Pays ${money(policy.max_payout_cents)}`
+  return 'Expires'
+}
+
 export function Ops() {
   const queryClient = useQueryClient()
   const ops = useQuery({ queryKey: ['ops'], queryFn: api.ops, refetchInterval: 10000 })
+  const [note, setNote] = useState<ResolveNote | null>(null)
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ['ops'] })
     queryClient.invalidateQueries({ queryKey: ['policies'] })
     queryClient.invalidateQueries({ queryKey: ['policy'] })
+    queryClient.invalidateQueries({ queryKey: ['me'] })
   }
   const settle = useMutation({ mutationFn: api.settle, onSuccess: refresh })
   const resolve = useMutation({
     mutationFn: ({ id, result }: { id: number; result: 'yes' | 'no' }) => api.resolve(id, { result }),
-    onSuccess: refresh,
+    onSuccess: (policy) => {
+      if (policy.status === 'PAID') {
+        setNote({ id: policy.id, message: `Paid ${money(policy.paid_cents)} to checking`, good: true })
+      } else if (policy.status === 'EXPIRED') {
+        setNote({ id: policy.id, message: 'Expired — no payout', good: false })
+      } else {
+        setNote({ id: policy.id, message: `Now ${policy.status.replace('_', ' ').toLowerCase()}`, good: false })
+      }
+      refresh()
+    },
   })
 
   return (
@@ -47,9 +73,9 @@ export function Ops() {
               />
               <Stat label="Market data" value={<span className="text-base">{ops.data.data_source}</span>} />
               <Stat
-                label="Reserve"
+                label="Claim reserve"
                 value={ops.data.reserve_balance_cents != null ? money(ops.data.reserve_balance_cents) : '—'}
-                sub={ops.data.reserve_error ?? 'Nessie reserve account'}
+                sub={ops.data.reserve_error ?? 'Funds payouts to customers (not their checking).'}
               />
               <Stat
                 label="Settlement worker"
@@ -74,12 +100,20 @@ export function Ops() {
             </div>
             <div className="mt-3">
               <ErrorNote error={settle.error ?? resolve.error} />
+              {note && (
+                <p className={`mt-2 text-sm ${note.good ? 'text-good' : 'text-muted'}`}>
+                  Policy #{note.id}: {note.message}
+                </p>
+              )}
             </div>
 
             <Card className="mt-4">
               <CardHeader>
                 <CardTitle>Book</CardTitle>
-                <span className="text-xs text-muted">Demo resolve forces a market result for markets that won't settle during a demo.</span>
+                <span className="text-xs text-muted">
+                  Demo resolve sets the market result. Customer is paid only if that matches the side they bought.
+                  Weather rain cover is YES — click “It happened” to pay.
+                </span>
               </CardHeader>
               <CardBody className="overflow-x-auto pt-3">
                 {ops.data.policies.length === 0 ? (
@@ -90,6 +124,7 @@ export function Ops() {
                       <tr>
                         <th className="pb-3 font-medium">Policy</th>
                         <th className="pb-3 font-medium">Business</th>
+                        <th className="pb-3 font-medium">Pays if</th>
                         <th className="pb-3 font-medium">Settles by</th>
                         <th className="pb-3 text-right font-medium">Premium</th>
                         <th className="pb-3 text-right font-medium">Max payout</th>
@@ -115,6 +150,7 @@ export function Ops() {
                               </div>
                             </td>
                             <td className="py-3">{policy.business_name}</td>
+                            <td className="py-3 text-muted">{paysIfLabel(policy.covered_side)}</td>
                             <td className="py-3 text-muted">{shortDate(policy.closes_at)}</td>
                             <td className="num py-3 text-right">{money(policy.premium_cents)}</td>
                             <td className="num py-3 text-right">{money(policy.max_payout_cents)}</td>
@@ -123,23 +159,30 @@ export function Ops() {
                             </td>
                             <td className="py-3 text-right whitespace-nowrap">
                               {open && (
-                                <span className="inline-flex gap-1.5">
-                                  <Button
-                                    size="sm"
-                                    variant="good"
-                                    disabled={resolve.isPending}
-                                    onClick={() => resolve.mutate({ id: policy.id, result: 'yes' })}
-                                  >
-                                    Resolve YES
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    disabled={resolve.isPending}
-                                    onClick={() => resolve.mutate({ id: policy.id, result: 'no' })}
-                                  >
-                                    Resolve NO
-                                  </Button>
+                                <span className="inline-flex flex-col items-end gap-1">
+                                  <span className="inline-flex gap-1.5">
+                                    <Button
+                                      size="sm"
+                                      variant="good"
+                                      disabled={resolve.isPending}
+                                      title={resolveHint(policy, 'yes')}
+                                      onClick={() => resolve.mutate({ id: policy.id, result: 'yes' })}
+                                    >
+                                      It happened (YES)
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      disabled={resolve.isPending}
+                                      title={resolveHint(policy, 'no')}
+                                      onClick={() => resolve.mutate({ id: policy.id, result: 'no' })}
+                                    >
+                                      It didn’t (NO)
+                                    </Button>
+                                  </span>
+                                  <span className="text-[11px] text-muted">
+                                    YES → {resolveHint(policy, 'yes')} · NO → {resolveHint(policy, 'no')}
+                                  </span>
                                 </span>
                               )}
                             </td>

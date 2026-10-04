@@ -33,7 +33,7 @@ test('weather wizard: protect against rain, resolve, get paid', async ({ page })
   const policyUrl = page.url()
 
   await page.goto('/ops')
-  await page.getByRole('button', { name: 'Resolve YES' }).first().click()
+  await page.getByRole('button', { name: 'It happened (YES)' }).first().click()
   await expect(page.getByText('Paid out').first()).toBeVisible()
 
   await page.goto(policyUrl)

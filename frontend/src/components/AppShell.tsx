@@ -1,9 +1,9 @@
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { LogOut } from 'lucide-react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router'
 import { api, type S } from '@/api/client'
 import { Logo } from '@/components/Logo'
-import { cn } from '@/lib/format'
+import { cn, money } from '@/lib/format'
 
 const NAV = [
   { to: '/', label: 'Plan', end: true },
@@ -13,12 +13,23 @@ const NAV = [
 export function AppShell({ business }: { business: S['Business'] }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const me = useQuery({
+    queryKey: ['me'],
+    queryFn: api.me,
+    initialData: business,
+    refetchOnWindowFocus: true,
+    refetchInterval: (query) => (query.state.data?.bank.linked ? 10000 : false),
+  })
+  const current = me.data ?? business
 
   async function switchBusiness() {
     await api.endSession()
     queryClient.clear()
     navigate('/welcome')
   }
+
+  const checking =
+    current.bank.linked && current.bank.balance_cents != null ? money(current.bank.balance_cents) : null
 
   return (
     <div className="min-h-screen">
@@ -46,9 +57,17 @@ export function AppShell({ business }: { business: S['Business'] }) {
           </nav>
           <div className="ml-auto flex items-center gap-3">
             <div className="text-right leading-tight">
-              <div className="text-sm font-medium text-ink">{business.name}</div>
+              <div className="text-sm font-medium text-ink">{current.name}</div>
               <div className="text-xs text-muted">
-                {business.city ? `${business.city.name}, ${business.city.state}` : business.industry}
+                {checking ? (
+                  <>
+                    Checking · <span className="num">{checking}</span>
+                  </>
+                ) : current.city ? (
+                  `${current.city.name}, ${current.city.state}`
+                ) : (
+                  current.industry
+                )}
               </div>
             </div>
             <button

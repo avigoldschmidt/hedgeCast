@@ -299,6 +299,7 @@ class WorkerStatus(BaseModel):
 class OpsPolicy(PolicySummary):
     business_name: str
     simulated: bool
+    covered_side: Literal["yes", "no", "mixed"]
 
 
 class OpsOverview(BaseModel):

@@ -478,11 +478,19 @@ class Service:
         policies = []
         for row in self.db.list_policies():
             legs = self.db.legs(row["id"])
+            sides = {leg["side"] for leg in legs}
+            if sides == {"yes"}:
+                covered_side = "yes"
+            elif sides == {"no"}:
+                covered_side = "no"
+            else:
+                covered_side = "mixed"
             policies.append(
                 s.OpsPolicy(
                     **self._summary(row, legs).model_dump(),
                     business_name=businesses.get(row["business_id"], ""),
                     simulated=any(leg["simulated"] for leg in legs),
+                    covered_side=covered_side,
                 )
             )
         return s.OpsOverview(

@@ -200,4 +200,5 @@ def test_ops_overview_and_manual_settle(world):
     assert body["counts"] == {"ACTIVE": 1}
     assert body["worker"]["last_run_at"]
     assert body["policies"][0]["simulated"] is True
+    assert body["policies"][0]["covered_side"] == "yes"
     assert body["reserve_balance_cents"] > 0

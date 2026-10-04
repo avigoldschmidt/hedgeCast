@@ -188,7 +188,9 @@ export function QuoteCheckout({ request, onPayout }: { request: S['QuoteRequest'
       </Button>
       <p className="mt-2 text-center text-xs text-muted">
         {bankLinked
-          ? `Charged to checking ••${me.data?.bank.account_mask}. Payouts go back automatically.`
+          ? me.data?.bank.balance_cents != null
+            ? `Checking ••${me.data.bank.account_mask} · ${money(me.data.bank.balance_cents)}. Premium comes out of this balance; payouts land back here.`
+            : `Charged to checking ••${me.data?.bank.account_mask}. Payouts go back automatically.`
           : 'Connect checking above to protect.'}
       </p>
     </div>

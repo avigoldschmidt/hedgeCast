@@ -33,11 +33,19 @@ export function PolicyPage() {
     queryFn: () => api.policy(Number(id)),
     refetchInterval: (query) => (query.state.data && !OPEN_STATUSES.includes(query.state.data.status) ? false : 5000),
   })
+  const me = useQuery({
+    queryKey: ['me'],
+    queryFn: api.me,
+    enabled: policy.data?.status === 'PAID',
+    refetchOnWindowFocus: true,
+  })
 
   if (policy.isPending) return <Loading />
   if (policy.isError) return <ErrorNote error={policy.error} />
   const p = policy.data
   const multi = p.legs.length > 1
+  const checking =
+    p.status === 'PAID' && me.data?.bank.balance_cents != null ? money(me.data.bank.balance_cents) : null
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -54,6 +62,12 @@ export function PolicyPage() {
       {p.status === 'PAID' && (
         <Banner icon={<PartyPopper className="size-5 text-good" />}>
           <strong>{money(p.paid_cents)} was paid into your checking account.</strong> No claim needed.
+          {checking && (
+            <>
+              {' '}
+              Checking balance is now <span className="num">{checking}</span>.
+            </>
+          )}
         </Banner>
       )}
 
@@ -101,6 +115,11 @@ export function PolicyPage() {
                 <Movement key={index} movement={movement} />
               ))}
             </ul>
+          )}
+          {checking && (
+            <p className="mt-4 text-sm text-muted">
+              Checking balance after payout: <span className="num font-medium text-ink">{checking}</span>
+            </p>
           )}
         </CardBody>
       </Card>

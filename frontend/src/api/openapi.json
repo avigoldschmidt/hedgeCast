@@ -611,6 +611,15 @@
             "title": "Closes At",
             "type": "string"
           },
+          "covered_side": {
+            "enum": [
+              "yes",
+              "no",
+              "mixed"
+            ],
+            "title": "Covered Side",
+            "type": "string"
+          },
           "created_at": {
             "title": "Created At",
             "type": "string"
@@ -683,7 +692,8 @@
           "paid_cents",
           "created_at",
           "business_name",
-          "simulated"
+          "simulated",
+          "covered_side"
         ],
         "title": "OpsPolicy",
         "type": "object"

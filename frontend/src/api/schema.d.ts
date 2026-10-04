@@ -568,6 +568,11 @@ export interface components {
             business_name: string;
             /** Closes At */
             closes_at: string;
+            /**
+             * Covered Side
+             * @enum {string}
+             */
+            covered_side: "yes" | "no" | "mixed";
             /** Created At */
             created_at: string;
             /** Id */
