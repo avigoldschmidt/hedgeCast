@@ -3,6 +3,12 @@ secrets/
 *.pem
 *.key
 hedgecast.db
+backend/hedgecast.db*
 __pycache__/
 .venv/
 .pytest_cache/
+.DS_Store
+frontend/node_modules/
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
