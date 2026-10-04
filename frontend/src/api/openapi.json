@@ -1,0 +1,1913 @@
+{
+  "components": {
+    "schemas": {
+      "ActivityItem": {
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "policy_id": {
+            "title": "Policy Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "policy_id",
+          "message",
+          "created_at"
+        ],
+        "title": "ActivityItem",
+        "type": "object"
+      },
+      "BankLink": {
+        "properties": {
+          "account_mask": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Mask"
+          },
+          "balance_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Balance Cents"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "linked": {
+            "title": "Linked",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "linked"
+        ],
+        "title": "BankLink",
+        "type": "object"
+      },
+      "BindRequest": {
+        "properties": {
+          "all_or_nothing": {
+            "default": false,
+            "title": "All Or Nothing",
+            "type": "boolean"
+          },
+          "quote_id": {
+            "title": "Quote Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "quote_id"
+        ],
+        "title": "BindRequest",
+        "type": "object"
+      },
+      "Business": {
+        "properties": {
+          "bank": {
+            "$ref": "#/components/schemas/BankLink"
+          },
+          "city": {
+            "$ref": "#/components/schemas/City"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "industry": {
+            "title": "Industry",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "industry",
+          "city",
+          "bank",
+          "created_at"
+        ],
+        "title": "Business",
+        "type": "object"
+      },
+      "BusinessListItem": {
+        "properties": {
+          "city": {
+            "$ref": "#/components/schemas/City"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "industry": {
+            "title": "Industry",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "industry",
+          "city"
+        ],
+        "title": "BusinessListItem",
+        "type": "object"
+      },
+      "City": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "state"
+        ],
+        "title": "City",
+        "type": "object"
+      },
+      "CoverageDay": {
+        "properties": {
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "triggers": {
+            "items": {
+              "$ref": "#/components/schemas/TriggerOption"
+            },
+            "title": "Triggers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "date",
+          "label",
+          "triggers"
+        ],
+        "title": "CoverageDay",
+        "type": "object"
+      },
+      "CoverageOptions": {
+        "properties": {
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/CoverageDay"
+            },
+            "title": "Days",
+            "type": "array"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "peril": {
+            "$ref": "#/components/schemas/Peril"
+          },
+          "station": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Station"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "peril",
+          "days"
+        ],
+        "title": "CoverageOptions",
+        "type": "object"
+      },
+      "CreateBusiness": {
+        "properties": {
+          "city_id": {
+            "title": "City Id",
+            "type": "string"
+          },
+          "industry": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Industry",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "industry",
+          "city_id"
+        ],
+        "title": "CreateBusiness",
+        "type": "object"
+      },
+      "Dashboard": {
+        "properties": {
+          "active_coverage_cents": {
+            "title": "Active Coverage Cents",
+            "type": "integer"
+          },
+          "activity": {
+            "items": {
+              "$ref": "#/components/schemas/ActivityItem"
+            },
+            "title": "Activity",
+            "type": "array"
+          },
+          "business": {
+            "$ref": "#/components/schemas/Business"
+          },
+          "payouts_received_cents": {
+            "title": "Payouts Received Cents",
+            "type": "integer"
+          },
+          "policies": {
+            "items": {
+              "$ref": "#/components/schemas/PolicySummary"
+            },
+            "title": "Policies",
+            "type": "array"
+          },
+          "premiums_paid_cents": {
+            "title": "Premiums Paid Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "business",
+          "active_coverage_cents",
+          "premiums_paid_cents",
+          "payouts_received_cents",
+          "policies",
+          "activity"
+        ],
+        "title": "Dashboard",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "MoneyMovement": {
+        "properties": {
+          "amount_cents": {
+            "title": "Amount Cents",
+            "type": "integer"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "external_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Id"
+          },
+          "kind": {
+            "enum": [
+              "premium",
+              "refund",
+              "payout"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "done",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "amount_cents",
+          "status",
+          "created_at"
+        ],
+        "title": "MoneyMovement",
+        "type": "object"
+      },
+      "OpsOverview": {
+        "properties": {
+          "counts": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Counts",
+            "type": "object"
+          },
+          "data_source": {
+            "title": "Data Source",
+            "type": "string"
+          },
+          "hedge_mode": {
+            "title": "Hedge Mode",
+            "type": "string"
+          },
+          "policies": {
+            "items": {
+              "$ref": "#/components/schemas/OpsPolicy"
+            },
+            "title": "Policies",
+            "type": "array"
+          },
+          "reserve_balance_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserve Balance Cents"
+          },
+          "reserve_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reserve Error"
+          },
+          "worker": {
+            "$ref": "#/components/schemas/WorkerStatus"
+          }
+        },
+        "required": [
+          "hedge_mode",
+          "data_source",
+          "worker",
+          "counts",
+          "policies"
+        ],
+        "title": "OpsOverview",
+        "type": "object"
+      },
+      "OpsPolicy": {
+        "properties": {
+          "basis_risk": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Basis Risk",
+            "type": "string"
+          },
+          "business_name": {
+            "title": "Business Name",
+            "type": "string"
+          },
+          "coverage_dates": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Coverage Dates",
+            "type": "array"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "max_payout_cents": {
+            "title": "Max Payout Cents",
+            "type": "integer"
+          },
+          "paid_cents": {
+            "title": "Paid Cents",
+            "type": "integer"
+          },
+          "payout_per_day_cents": {
+            "title": "Payout Per Day Cents",
+            "type": "integer"
+          },
+          "peril": {
+            "enum": [
+              "rain",
+              "heat",
+              "cold"
+            ],
+            "title": "Peril",
+            "type": "string"
+          },
+          "premium_cents": {
+            "title": "Premium Cents",
+            "type": "integer"
+          },
+          "simulated": {
+            "title": "Simulated",
+            "type": "boolean"
+          },
+          "station_name": {
+            "title": "Station Name",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "ACTIVE",
+              "AWAITING_RESULT",
+              "PAID",
+              "EXPIRED",
+              "REFUNDED",
+              "NEEDS_REVIEW"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "peril",
+          "title",
+          "station_name",
+          "basis_risk",
+          "status",
+          "coverage_dates",
+          "payout_per_day_cents",
+          "max_payout_cents",
+          "premium_cents",
+          "paid_cents",
+          "created_at",
+          "business_name",
+          "simulated"
+        ],
+        "title": "OpsPolicy",
+        "type": "object"
+      },
+      "Peril": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "enum": [
+              "rain",
+              "heat",
+              "cold"
+            ],
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description"
+        ],
+        "title": "Peril",
+        "type": "object"
+      },
+      "PolicyDetail": {
+        "properties": {
+          "basis_risk": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Basis Risk",
+            "type": "string"
+          },
+          "coverage_dates": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Coverage Dates",
+            "type": "array"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/PolicyEvent"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "legs": {
+            "items": {
+              "$ref": "#/components/schemas/PolicyLeg"
+            },
+            "title": "Legs",
+            "type": "array"
+          },
+          "max_payout_cents": {
+            "title": "Max Payout Cents",
+            "type": "integer"
+          },
+          "movements": {
+            "items": {
+              "$ref": "#/components/schemas/MoneyMovement"
+            },
+            "title": "Movements",
+            "type": "array"
+          },
+          "paid_cents": {
+            "title": "Paid Cents",
+            "type": "integer"
+          },
+          "payout_per_day_cents": {
+            "title": "Payout Per Day Cents",
+            "type": "integer"
+          },
+          "peril": {
+            "enum": [
+              "rain",
+              "heat",
+              "cold"
+            ],
+            "title": "Peril",
+            "type": "string"
+          },
+          "premium_cents": {
+            "title": "Premium Cents",
+            "type": "integer"
+          },
+          "station_name": {
+            "title": "Station Name",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "ACTIVE",
+              "AWAITING_RESULT",
+              "PAID",
+              "EXPIRED",
+              "REFUNDED",
+              "NEEDS_REVIEW"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "terms": {
+            "title": "Terms",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "peril",
+          "title",
+          "station_name",
+          "basis_risk",
+          "status",
+          "coverage_dates",
+          "payout_per_day_cents",
+          "max_payout_cents",
+          "premium_cents",
+          "paid_cents",
+          "created_at",
+          "terms",
+          "legs",
+          "events",
+          "movements"
+        ],
+        "title": "PolicyDetail",
+        "type": "object"
+      },
+      "PolicyEvent": {
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "message",
+          "created_at"
+        ],
+        "title": "PolicyEvent",
+        "type": "object"
+      },
+      "PolicyLeg": {
+        "properties": {
+          "close_time": {
+            "title": "Close Time",
+            "type": "string"
+          },
+          "contracts": {
+            "title": "Contracts",
+            "type": "integer"
+          },
+          "cost_cents": {
+            "title": "Cost Cents",
+            "type": "integer"
+          },
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "fill_price": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fill Price"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
+          "simulated": {
+            "title": "Simulated",
+            "type": "boolean"
+          },
+          "ticker": {
+            "title": "Ticker",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticker",
+          "date",
+          "label",
+          "contracts",
+          "cost_cents",
+          "simulated",
+          "close_time"
+        ],
+        "title": "PolicyLeg",
+        "type": "object"
+      },
+      "PolicySummary": {
+        "properties": {
+          "basis_risk": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Basis Risk",
+            "type": "string"
+          },
+          "coverage_dates": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Coverage Dates",
+            "type": "array"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "max_payout_cents": {
+            "title": "Max Payout Cents",
+            "type": "integer"
+          },
+          "paid_cents": {
+            "title": "Paid Cents",
+            "type": "integer"
+          },
+          "payout_per_day_cents": {
+            "title": "Payout Per Day Cents",
+            "type": "integer"
+          },
+          "peril": {
+            "enum": [
+              "rain",
+              "heat",
+              "cold"
+            ],
+            "title": "Peril",
+            "type": "string"
+          },
+          "premium_cents": {
+            "title": "Premium Cents",
+            "type": "integer"
+          },
+          "station_name": {
+            "title": "Station Name",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PENDING",
+              "ACTIVE",
+              "AWAITING_RESULT",
+              "PAID",
+              "EXPIRED",
+              "REFUNDED",
+              "NEEDS_REVIEW"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "peril",
+          "title",
+          "station_name",
+          "basis_risk",
+          "status",
+          "coverage_dates",
+          "payout_per_day_cents",
+          "max_payout_cents",
+          "premium_cents",
+          "paid_cents",
+          "created_at"
+        ],
+        "title": "PolicySummary",
+        "type": "object"
+      },
+      "Quote": {
+        "properties": {
+          "breakdown": {
+            "$ref": "#/components/schemas/QuoteBreakdown"
+          },
+          "expires_at": {
+            "title": "Expires At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "legs": {
+            "items": {
+              "$ref": "#/components/schemas/QuoteLeg"
+            },
+            "title": "Legs",
+            "type": "array"
+          },
+          "max_payout_cents": {
+            "title": "Max Payout Cents",
+            "type": "integer"
+          },
+          "payout_per_day_cents": {
+            "title": "Payout Per Day Cents",
+            "type": "integer"
+          },
+          "peril": {
+            "$ref": "#/components/schemas/Peril"
+          },
+          "premium_cents": {
+            "title": "Premium Cents",
+            "type": "integer"
+          },
+          "station": {
+            "$ref": "#/components/schemas/Station"
+          },
+          "terms": {
+            "title": "Terms",
+            "type": "string"
+          },
+          "thin_book": {
+            "$ref": "#/components/schemas/ThinBook"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "expires_at",
+          "peril",
+          "station",
+          "payout_per_day_cents",
+          "max_payout_cents",
+          "premium_cents",
+          "legs",
+          "breakdown",
+          "terms",
+          "warnings",
+          "thin_book"
+        ],
+        "title": "Quote",
+        "type": "object"
+      },
+      "QuoteBreakdown": {
+        "properties": {
+          "buffer_cents": {
+            "title": "Buffer Cents",
+            "type": "integer"
+          },
+          "exchange_fee_cents": {
+            "title": "Exchange Fee Cents",
+            "type": "integer"
+          },
+          "hedge_cost_cents": {
+            "title": "Hedge Cost Cents",
+            "type": "integer"
+          },
+          "platform_fee_cents": {
+            "title": "Platform Fee Cents",
+            "type": "integer"
+          },
+          "rounding_cents": {
+            "title": "Rounding Cents",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hedge_cost_cents",
+          "exchange_fee_cents",
+          "buffer_cents",
+          "platform_fee_cents",
+          "rounding_cents"
+        ],
+        "title": "QuoteBreakdown",
+        "type": "object"
+      },
+      "QuoteLeg": {
+        "properties": {
+          "avg_price": {
+            "title": "Avg Price",
+            "type": "string"
+          },
+          "contracts": {
+            "title": "Contracts",
+            "type": "integer"
+          },
+          "cost_cents": {
+            "title": "Cost Cents",
+            "type": "integer"
+          },
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "depth_contracts": {
+            "title": "Depth Contracts",
+            "type": "integer"
+          },
+          "implied_probability": {
+            "title": "Implied Probability",
+            "type": "number"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "ticker": {
+            "title": "Ticker",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticker",
+          "date",
+          "label",
+          "contracts",
+          "avg_price",
+          "cost_cents",
+          "depth_contracts",
+          "implied_probability"
+        ],
+        "title": "QuoteLeg",
+        "type": "object"
+      },
+      "QuoteRequest": {
+        "properties": {
+          "payout_dollars": {
+            "minimum": 1.0,
+            "title": "Payout Dollars",
+            "type": "integer"
+          },
+          "peril": {
+            "enum": [
+              "rain",
+              "heat",
+              "cold"
+            ],
+            "title": "Peril",
+            "type": "string"
+          },
+          "tickers": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5,
+            "minItems": 1,
+            "title": "Tickers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "peril",
+          "tickers",
+          "payout_dollars"
+        ],
+        "title": "QuoteRequest",
+        "type": "object"
+      },
+      "ResolveRequest": {
+        "properties": {
+          "result": {
+            "enum": [
+              "yes",
+              "no"
+            ],
+            "title": "Result",
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "title": "ResolveRequest",
+        "type": "object"
+      },
+      "SessionRequest": {
+        "properties": {
+          "business_id": {
+            "title": "Business Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "business_id"
+        ],
+        "title": "SessionRequest",
+        "type": "object"
+      },
+      "Station": {
+        "properties": {
+          "basis_note": {
+            "title": "Basis Note",
+            "type": "string"
+          },
+          "basis_risk": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Basis Risk",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "distance_km": {
+            "title": "Distance Km",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "distance_km",
+          "basis_risk",
+          "basis_note"
+        ],
+        "title": "Station",
+        "type": "object"
+      },
+      "ThinBook": {
+        "properties": {
+          "max_payout_dollars": {
+            "title": "Max Payout Dollars",
+            "type": "integer"
+          },
+          "short": {
+            "title": "Short",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "short",
+          "max_payout_dollars"
+        ],
+        "title": "ThinBook",
+        "type": "object"
+      },
+      "TriggerOption": {
+        "properties": {
+          "implied_probability": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Implied Probability"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "ticker": {
+            "title": "Ticker",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticker",
+          "label"
+        ],
+        "title": "TriggerOption",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "WorkerStatus": {
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "last_result": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Result"
+          },
+          "last_run_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Run At"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "WorkerStatus",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "HedgeCast",
+    "version": "2.0.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/businesses": {
+      "get": {
+        "operationId": "businesses_api_businesses_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/BusinessListItem"
+                  },
+                  "title": "Response Businesses Api Businesses Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Businesses"
+      },
+      "post": {
+        "operationId": "create_business_api_businesses_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBusiness"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Business"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Business"
+      }
+    },
+    "/api/cities": {
+      "get": {
+        "operationId": "cities_api_cities_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/City"
+                  },
+                  "title": "Response Cities Api Cities Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Cities"
+      }
+    },
+    "/api/coverage": {
+      "get": {
+        "operationId": "coverage_api_coverage_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "peril",
+            "required": true,
+            "schema": {
+              "enum": [
+                "rain",
+                "heat",
+                "cold"
+              ],
+              "title": "Peril",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "hc_business",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hc Business"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CoverageOptions"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Coverage"
+      }
+    },
+    "/api/dashboard": {
+      "get": {
+        "operationId": "dashboard_api_dashboard_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "hc_business",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hc Business"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dashboard"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dashboard"
+      }
+    },
+    "/api/health": {
+      "get": {
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health"
+      }
+    },
+    "/api/me": {
+      "get": {
+        "operationId": "me_api_me_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "hc_business",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hc Business"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Business"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Me"
+      }
+    },
+    "/api/me/bank": {
+      "post": {
+        "operationId": "link_bank_api_me_bank_post",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "hc_business",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hc Business"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Business"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Link Bank"
+      }
+    },
+    "/api/ops": {
+      "get": {
+        "operationId": "ops_api_ops_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpsOverview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Ops"
+      }
+    },
+    "/api/ops/policies/{policy_id}/resolve": {
+      "post": {
+        "operationId": "ops_resolve_api_ops_policies__policy_id__resolve_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "policy_id",
+            "required": true,
+            "schema": {
+              "title": "Policy Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ops Resolve"
+      }
+    },
+    "/api/ops/settle": {
+      "post": {
+        "operationId": "ops_settle_api_ops_settle_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpsOverview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Ops Settle"
+      }
+    },
+    "/api/perils": {
+      "get": {
+        "operationId": "perils_api_perils_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Peril"
+                  },
+                  "title": "Response Perils Api Perils Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Perils"
+      }
+    },
+    "/api/policies": {
+      "get": {
+        "operationId": "policies_api_policies_get",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "hc_business",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hc Business"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PolicySummary"
+                  },
+                  "title": "Response Policies Api Policies Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Policies"
+      },
+      "post": {
+        "operationId": "bind_api_policies_post",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "hc_business",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hc Business"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BindRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Bind"
+      }
+    },
+    "/api/policies/{policy_id}": {
+      "get": {
+        "operationId": "policy_api_policies__policy_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "policy_id",
+            "required": true,
+            "schema": {
+              "title": "Policy Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "hc_business",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hc Business"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Policy"
+      }
+    },
+    "/api/quotes": {
+      "post": {
+        "operationId": "quote_api_quotes_post",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "hc_business",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hc Business"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuoteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Quote"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Quote"
+      }
+    },
+    "/api/session": {
+      "delete": {
+        "operationId": "end_session_api_session_delete",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "End Session"
+      },
+      "post": {
+        "operationId": "start_session_api_session_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SessionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Business"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Start Session"
+      }
+    }
+  }
+}

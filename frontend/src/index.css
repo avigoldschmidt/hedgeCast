@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  --font-display: ui-serif, "New York", "Iowan Old Style", Georgia, serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  --color-canvas: #f6f5f1;
+  --color-surface: #ffffff;
+  --color-ink: #0d1b2a;
+  --color-ink-soft: #3a4656;
+  --color-muted: #6b7380;
+  --color-line: #e6e3dc;
+  --color-line-strong: #d4d0c6;
+  --color-brand: #0e5e6f;
+  --color-brand-soft: #e3f0f1;
+  --color-sun: #c97f12;
+  --color-sun-soft: #fbf1df;
+  --color-good: #15803d;
+  --color-good-soft: #e5f4ea;
+  --color-bad: #b42318;
+  --color-bad-soft: #fbe9e7;
+  --color-sky: #2563eb;
+  --color-sky-soft: #e8efff;
+
+  --shadow-card: 0 1px 2px rgb(13 27 42 / 0.04), 0 4px 16px rgb(13 27 42 / 0.04);
+  --shadow-lift: 0 2px 4px rgb(13 27 42 / 0.06), 0 12px 32px rgb(13 27 42 / 0.08);
+}
+
+@layer base {
+  html {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    min-height: 100vh;
+  }
+  ::selection {
+    background: var(--color-brand-soft);
+  }
+}
+
+@utility num {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}

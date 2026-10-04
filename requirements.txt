@@ -1,4 +1,8 @@
-flask>=3.0
+fastapi>=0.128
+uvicorn>=0.39
+pydantic>=2.13
 requests>=2.32
 cryptography>=42.0
 python-dotenv>=1.0
+pytest>=8.4
+httpx>=0.28
