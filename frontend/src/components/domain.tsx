@@ -1,5 +1,6 @@
+import { Check, CloudRain, Snowflake, Sun, type LucideIcon } from 'lucide-react'
 import type { ReactNode } from 'react'
-import type { PolicyStatus, TopicId } from '@/api/client'
+import type { PerilId, PolicyStatus, TopicId } from '@/api/client'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/format'
 import { TOPICS } from '@/lib/topics'
@@ -28,6 +29,46 @@ export function TopicIcon({ topic, className }: { topic: TopicId; className?: st
   return (
     <span className={cn('inline-flex size-10 shrink-0 items-center justify-center rounded-xl', tint, className)}>
       <Icon className="size-5" strokeWidth={1.8} />
+    </span>
+  )
+}
+
+const BASIS: Record<'low' | 'medium' | 'high', { label: string; tone: 'good' | 'sun' | 'bad' }> = {
+  low: { label: 'Close station', tone: 'good' },
+  medium: { label: 'Some distance', tone: 'sun' },
+  high: { label: 'Far station', tone: 'bad' },
+}
+
+export function BasisRiskBadge({ risk }: { risk: 'low' | 'medium' | 'high' }) {
+  const { label, tone } = BASIS[risk]
+  return <Badge tone={tone}>{label}</Badge>
+}
+
+const PERIL_ICON: Record<PerilId, LucideIcon> = { rain: CloudRain, heat: Sun, cold: Snowflake }
+const PERIL_TINT: Record<PerilId, string> = {
+  rain: 'bg-sky-soft text-sky',
+  heat: 'bg-sun-soft text-sun',
+  cold: 'bg-brand-soft text-brand',
+}
+
+export function PerilIcon({ peril, className }: { peril: PerilId; className?: string }) {
+  const Icon = PERIL_ICON[peril]
+  return (
+    <span className={cn('inline-flex size-10 shrink-0 items-center justify-center rounded-xl', PERIL_TINT[peril], className)}>
+      <Icon className="size-5" strokeWidth={1.8} />
+    </span>
+  )
+}
+
+export function Checkbox({ checked }: { checked: boolean }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex size-4 shrink-0 items-center justify-center rounded border',
+        checked ? 'border-canvas bg-canvas text-ink' : 'border-line-strong',
+      )}
+    >
+      {checked && <Check className="size-3" />}
     </span>
   )
 }

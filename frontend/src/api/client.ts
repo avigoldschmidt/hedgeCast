@@ -2,9 +2,11 @@ import type { components } from './schema'
 
 export type S = components['schemas']
 export type TopicId = S['TopicInfo']['id']
+export type PerilId = S['Peril']['id']
 export type Side = S['LegRequest']['side']
 export type PolicyStatus = S['PolicySummary']['status']
 export type PlanCard = S['PlanCard']
+export type BrowseGroup = S['BrowseGroup']
 
 export class ApiError extends Error {
   status: number
@@ -39,6 +41,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 export const api = {
   cities: () => request<S['City'][]>('GET', '/cities'),
   topics: () => request<S['TopicInfo'][]>('GET', '/topics'),
+  industries: () => request<S['IndustryInfo'][]>('GET', '/industries'),
   businesses: () => request<S['BusinessListItem'][]>('GET', '/businesses'),
   createBusiness: (body: S['CreateBusiness']) => request<S['Business']>('POST', '/businesses', body),
   startSession: (body: S['SessionRequest']) => request<S['Business']>('POST', '/session', body),
@@ -46,8 +49,12 @@ export const api = {
   me: () => request<S['Business']>('GET', '/me'),
   linkBank: () => request<S['Business']>('POST', '/me/bank'),
   setTopics: (topics: TopicId[]) => request<S['Business']>('PUT', '/me/topics', { topics }),
+  setCity: (city_id: string) => request<S['Business']>('PUT', '/me/city', { city_id }),
+  perils: () => request<S['Peril'][]>('GET', '/perils'),
+  weather: (peril: PerilId) => request<S['WeatherOptions']>('GET', `/weather?peril=${encodeURIComponent(peril)}`),
+  browse: (topic: TopicId) => request<S['BrowseResult']>('GET', `/browse?topic=${encodeURIComponent(topic)}`),
   forecast: () => request<S['Forecast']>('GET', '/forecast'),
-  ask: (text: string) => request<S['AskResult']>('POST', '/ask', { text }),
+  search: (q: string) => request<S['SearchResult']>('GET', `/search?q=${encodeURIComponent(q)}`),
   quote: (body: S['QuoteRequest']) => request<S['Quote']>('POST', '/quotes', body),
   bind: (body: S['BindRequest']) => request<S['PolicyDetail']>('POST', '/policies', body),
   policies: () => request<S['PolicySummary'][]>('GET', '/policies'),

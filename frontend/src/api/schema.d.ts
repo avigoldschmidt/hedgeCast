@@ -4,17 +4,17 @@
  */
 
 export interface paths {
-    "/api/ask": {
+    "/api/browse": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Browse */
+        get: operations["browse_api_browse_get"];
         put?: never;
-        /** Ask */
-        post: operations["ask_api_ask_post"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -90,6 +90,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/industries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Industry List */
+        get: operations["industry_list_api_industries_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/me": {
         parameters: {
             query?: never;
@@ -118,6 +135,23 @@ export interface paths {
         put?: never;
         /** Link Bank */
         post: operations["link_bank_api_me_bank_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/me/city": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set City */
+        put: operations["set_city_api_me_city_put"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -192,6 +226,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/perils": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Perils */
+        get: operations["perils_api_perils_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/policies": {
         parameters: {
             query?: never;
@@ -244,6 +295,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search */
+        get: operations["search_api_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/session": {
         parameters: {
             query?: never;
@@ -279,22 +347,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/weather": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Weather */
+        get: operations["weather_api_weather_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /** AskRequest */
-        AskRequest: {
-            /** Text */
-            text: string;
-        };
-        /** AskResult */
-        AskResult: {
-            /** Cards */
-            cards: components["schemas"]["PlanCard"][];
-            /** Message */
-            message: string;
-        };
         /** BankLink */
         BankLink: {
             /** Account Mask */
@@ -315,6 +388,42 @@ export interface components {
             all_or_nothing: boolean;
             /** Quote Id */
             quote_id: string;
+        };
+        /** BrowseGroup */
+        BrowseGroup: {
+            /** Id */
+            id: string;
+            /** Options */
+            options: components["schemas"]["BrowseOption"][];
+            /** Settles On */
+            settles_on: string;
+            /** Title */
+            title: string;
+            /** Warning */
+            warning?: string | null;
+        };
+        /** BrowseOption */
+        BrowseOption: {
+            /** Chance */
+            chance?: number | null;
+            /** Closes At */
+            closes_at: string;
+            /** Label */
+            label: string;
+            /** Ticker */
+            ticker: string;
+        };
+        /** BrowseResult */
+        BrowseResult: {
+            /** Groups */
+            groups: components["schemas"]["BrowseGroup"][];
+            /** Message */
+            message?: string | null;
+            /**
+             * Topic
+             * @enum {string}
+             */
+            topic: "weather" | "fuel" | "rates" | "prices" | "tariffs" | "sports" | "jobs" | "other";
         };
         /** Business */
         Business: {
@@ -365,12 +474,26 @@ export interface components {
             /** State */
             state: string;
         };
+        /** CityUpdate */
+        CityUpdate: {
+            /** City Id */
+            city_id: string;
+        };
+        /** CoverageDay */
+        CoverageDay: {
+            /** Date */
+            date: string;
+            /** Label */
+            label: string;
+            /** Triggers */
+            triggers: components["schemas"]["TriggerOption"][];
+        };
         /** CreateBusiness */
         CreateBusiness: {
             /** City Id */
             city_id?: string | null;
-            /** Description */
-            description: string;
+            /** Industry */
+            industry: string;
             /** Name */
             name: string;
         };
@@ -380,13 +503,16 @@ export interface components {
             cards: components["schemas"]["PlanCard"][];
             /** Note */
             note?: string | null;
-            /** Tailored */
-            tailored: boolean;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** IndustryInfo */
+        IndustryInfo: {
+            /** Name */
+            name: string;
         };
         /** LegRequest */
         LegRequest: {
@@ -420,8 +546,6 @@ export interface components {
         };
         /** OpsOverview */
         OpsOverview: {
-            /** Advisor */
-            advisor: string;
             /** Counts */
             counts: {
                 [key: string]: number;
@@ -470,6 +594,18 @@ export interface components {
              * @enum {string}
              */
             topic: "weather" | "fuel" | "rates" | "prices" | "tariffs" | "sports" | "jobs" | "other";
+        };
+        /** Peril */
+        Peril: {
+            /** Description */
+            description: string;
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "rain" | "heat" | "cold";
+            /** Name */
+            name: string;
         };
         /** PlanCard */
         PlanCard: {
@@ -712,10 +848,33 @@ export interface components {
              */
             result: "yes" | "no";
         };
+        /** SearchResult */
+        SearchResult: {
+            /** Cards */
+            cards: components["schemas"]["PlanCard"][];
+            /** Message */
+            message: string;
+        };
         /** SessionRequest */
         SessionRequest: {
             /** Business Id */
             business_id: number;
+        };
+        /** Station */
+        Station: {
+            /** Basis Note */
+            basis_note: string;
+            /**
+             * Basis Risk
+             * @enum {string}
+             */
+            basis_risk: "low" | "medium" | "high";
+            /** Code */
+            code: string;
+            /** Distance Km */
+            distance_km: number;
+            /** Name */
+            name: string;
         };
         /** ThinBook */
         ThinBook: {
@@ -741,6 +900,15 @@ export interface components {
             /** Topics */
             topics: ("weather" | "fuel" | "rates" | "prices" | "tariffs" | "sports" | "jobs" | "other")[];
         };
+        /** TriggerOption */
+        TriggerOption: {
+            /** Implied Probability */
+            implied_probability?: number | null;
+            /** Label */
+            label: string;
+            /** Ticker */
+            ticker: string;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -753,6 +921,15 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** WeatherOptions */
+        WeatherOptions: {
+            /** Days */
+            days: components["schemas"]["CoverageDay"][];
+            /** Message */
+            message?: string | null;
+            peril: components["schemas"]["Peril"];
+            station: components["schemas"]["Station"];
         };
         /** WorkerStatus */
         WorkerStatus: {
@@ -772,20 +949,18 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    ask_api_ask_post: {
+    browse_api_browse_get: {
         parameters: {
-            query?: never;
+            query: {
+                topic: "weather" | "fuel" | "rates" | "prices" | "tariffs" | "sports" | "jobs" | "other";
+            };
             header?: never;
             path?: never;
             cookie?: {
                 hc_business?: string | null;
             };
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AskRequest"];
-            };
-        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -793,7 +968,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AskResult"];
+                    "application/json": components["schemas"]["BrowseResult"];
                 };
             };
             /** @description Validation Error */
@@ -931,6 +1106,26 @@ export interface operations {
             };
         };
     };
+    industry_list_api_industries_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["IndustryInfo"][];
+                };
+            };
+        };
+    };
     me_api_me_get: {
         parameters: {
             query?: never;
@@ -972,6 +1167,41 @@ export interface operations {
             };
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Business"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    set_city_api_me_city_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                hc_business?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CityUpdate"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -1099,6 +1329,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OpsOverview"];
+                };
+            };
+        };
+    };
+    perils_api_perils_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Peril"][];
                 };
             };
         };
@@ -1237,6 +1487,39 @@ export interface operations {
             };
         };
     };
+    search_api_search_get: {
+        parameters: {
+            query?: {
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                hc_business?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     start_session_api_session_post: {
         parameters: {
             query?: never;
@@ -1306,6 +1589,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["TopicInfo"][];
+                };
+            };
+        };
+    };
+    weather_api_weather_get: {
+        parameters: {
+            query: {
+                peril: "rain" | "heat" | "cold";
+            };
+            header?: never;
+            path?: never;
+            cookie?: {
+                hc_business?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeatherOptions"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

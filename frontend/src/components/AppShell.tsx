@@ -6,8 +6,8 @@ import { Logo } from '@/components/Logo'
 import { cn } from '@/lib/format'
 
 const NAV = [
-  { to: '/', label: 'Forecast', end: true },
-  { to: '/policies', label: 'Policies', end: false },
+  { to: '/', label: 'Plan', end: true },
+  { to: '/policies', label: 'Cover', end: false },
 ]
 
 export function AppShell({ business }: { business: S['Business'] }) {

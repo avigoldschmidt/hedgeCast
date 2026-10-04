@@ -70,16 +70,16 @@ def main():
         "create business",
         client.post(
             "/api/businesses",
-            json={"name": "Smoke Test Bakery", "description": "A neighborhood bakery with outdoor seating", "city_id": "new-york-ny"},
+            json={"name": "Smoke Test Bakery", "industry": "Café or coffee shop", "city_id": "new-york-ny"},
         ),
     )
-    print(f"     profile ({service.advisor.name if service.advisor else 'no advisor'}): {created['industry']} · {', '.join(created['topics'])}")
+    print(f"     profile: {created['industry']} · {', '.join(created['topics'])}")
     business = step("link Nessie checking", client.post("/api/me/bank"))
     opening = business["bank"]["balance_cents"]
     print(f"     checking balance ${opening / 100:,.2f}")
 
     forecast = step("forecast from live Kalshi", client.get("/api/forecast"))
-    print(f"     {len(forecast['cards'])} plans · {'tailored' if forecast['tailored'] else 'plain wording'}")
+    print(f"     {len(forecast['cards'])} coverage cards")
     for card in forecast["cards"][:6]:
         print(f"     {card['topic']:<8} {card['title']}")
     quote = first_coverable_quote(client, forecast["cards"])

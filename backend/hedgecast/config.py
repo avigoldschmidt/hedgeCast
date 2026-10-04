@@ -32,16 +32,6 @@ def worker_enabled():
     return _env("HEDGECAST_WORKER", "1") == "1"
 
 
-def gemini_api_key():
-    return _env("GEMINI_API_KEY", "")
-
-
-def gemini_model():
-    return _env("GEMINI_MODEL", "gemini-3.8-flash")
-
-
-FORECAST_CACHE_SECONDS = 3 * 60 * 60
-
 QUOTE_TTL_SECONDS = 30
 SLIPPAGE_BUFFER = "0.02"
 PLATFORM_FEE = "0.10"

@@ -11,7 +11,7 @@ export function Policies() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <PageHeader eyebrow="Your cover" title="Policies" />
+      <PageHeader eyebrow="Your cover" title="Active and past plans" />
       {policies.isPending && <Loading />}
       <ErrorNote error={policies.error} />
       {policies.data && (
@@ -21,7 +21,7 @@ export function Policies() {
               <div className="py-10 text-center text-sm text-muted">
                 Nothing yet.{' '}
                 <Link to="/" className="font-medium text-ink underline-offset-4 hover:underline">
-                  Pick something from your forecast
+                  Build a cover plan
                 </Link>
                 .
               </div>

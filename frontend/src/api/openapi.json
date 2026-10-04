@@ -1,42 +1,6 @@
 {
   "components": {
     "schemas": {
-      "AskRequest": {
-        "properties": {
-          "text": {
-            "maxLength": 300,
-            "minLength": 3,
-            "title": "Text",
-            "type": "string"
-          }
-        },
-        "required": [
-          "text"
-        ],
-        "title": "AskRequest",
-        "type": "object"
-      },
-      "AskResult": {
-        "properties": {
-          "cards": {
-            "items": {
-              "$ref": "#/components/schemas/PlanCard"
-            },
-            "title": "Cards",
-            "type": "array"
-          },
-          "message": {
-            "title": "Message",
-            "type": "string"
-          }
-        },
-        "required": [
-          "cards",
-          "message"
-        ],
-        "title": "AskResult",
-        "type": "object"
-      },
       "BankLink": {
         "properties": {
           "account_mask": {
@@ -99,6 +63,124 @@
           "quote_id"
         ],
         "title": "BindRequest",
+        "type": "object"
+      },
+      "BrowseGroup": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/BrowseOption"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "settles_on": {
+            "title": "Settles On",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "warning": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warning"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "settles_on",
+          "options"
+        ],
+        "title": "BrowseGroup",
+        "type": "object"
+      },
+      "BrowseOption": {
+        "properties": {
+          "chance": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Chance"
+          },
+          "closes_at": {
+            "title": "Closes At",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "ticker": {
+            "title": "Ticker",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticker",
+          "label",
+          "closes_at"
+        ],
+        "title": "BrowseOption",
+        "type": "object"
+      },
+      "BrowseResult": {
+        "properties": {
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/BrowseGroup"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "topic": {
+            "enum": [
+              "weather",
+              "fuel",
+              "rates",
+              "prices",
+              "tariffs",
+              "sports",
+              "jobs",
+              "other"
+            ],
+            "title": "Topic",
+            "type": "string"
+          }
+        },
+        "required": [
+          "topic",
+          "groups"
+        ],
+        "title": "BrowseResult",
         "type": "object"
       },
       "Business": {
@@ -261,6 +343,47 @@
         "title": "City",
         "type": "object"
       },
+      "CityUpdate": {
+        "properties": {
+          "city_id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "City Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "city_id"
+        ],
+        "title": "CityUpdate",
+        "type": "object"
+      },
+      "CoverageDay": {
+        "properties": {
+          "date": {
+            "title": "Date",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "triggers": {
+            "items": {
+              "$ref": "#/components/schemas/TriggerOption"
+            },
+            "title": "Triggers",
+            "type": "array"
+          }
+        },
+        "required": [
+          "date",
+          "label",
+          "triggers"
+        ],
+        "title": "CoverageDay",
+        "type": "object"
+      },
       "CreateBusiness": {
         "properties": {
           "city_id": {
@@ -274,10 +397,10 @@
             ],
             "title": "City Id"
           },
-          "description": {
-            "maxLength": 300,
-            "minLength": 3,
-            "title": "Description",
+          "industry": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Industry",
             "type": "string"
           },
           "name": {
@@ -289,7 +412,7 @@
         },
         "required": [
           "name",
-          "description"
+          "industry"
         ],
         "title": "CreateBusiness",
         "type": "object"
@@ -313,15 +436,10 @@
               }
             ],
             "title": "Note"
-          },
-          "tailored": {
-            "title": "Tailored",
-            "type": "boolean"
           }
         },
         "required": [
-          "cards",
-          "tailored"
+          "cards"
         ],
         "title": "Forecast",
         "type": "object"
@@ -337,6 +455,19 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "IndustryInfo": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "IndustryInfo",
         "type": "object"
       },
       "LegRequest": {
@@ -412,10 +543,6 @@
       },
       "OpsOverview": {
         "properties": {
-          "advisor": {
-            "title": "Advisor",
-            "type": "string"
-          },
           "counts": {
             "additionalProperties": {
               "type": "integer"
@@ -467,7 +594,6 @@
         "required": [
           "hedge_mode",
           "data_source",
-          "advisor",
           "worker",
           "counts",
           "policies"
@@ -560,6 +686,34 @@
           "simulated"
         ],
         "title": "OpsPolicy",
+        "type": "object"
+      },
+      "Peril": {
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "id": {
+            "enum": [
+              "rain",
+              "heat",
+              "cold"
+            ],
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description"
+        ],
+        "title": "Peril",
         "type": "object"
       },
       "PlanCard": {
@@ -1216,6 +1370,27 @@
         "title": "ResolveRequest",
         "type": "object"
       },
+      "SearchResult": {
+        "properties": {
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/PlanCard"
+            },
+            "title": "Cards",
+            "type": "array"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cards",
+          "message"
+        ],
+        "title": "SearchResult",
+        "type": "object"
+      },
       "SessionRequest": {
         "properties": {
           "business_id": {
@@ -1227,6 +1402,44 @@
           "business_id"
         ],
         "title": "SessionRequest",
+        "type": "object"
+      },
+      "Station": {
+        "properties": {
+          "basis_note": {
+            "title": "Basis Note",
+            "type": "string"
+          },
+          "basis_risk": {
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ],
+            "title": "Basis Risk",
+            "type": "string"
+          },
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "distance_km": {
+            "title": "Distance Km",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "distance_km",
+          "basis_risk",
+          "basis_note"
+        ],
+        "title": "Station",
         "type": "object"
       },
       "ThinBook": {
@@ -1308,6 +1521,35 @@
         "title": "TopicsUpdate",
         "type": "object"
       },
+      "TriggerOption": {
+        "properties": {
+          "implied_probability": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Implied Probability"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "ticker": {
+            "title": "Ticker",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticker",
+          "label"
+        ],
+        "title": "TriggerOption",
+        "type": "object"
+      },
       "ValidationError": {
         "properties": {
           "ctx": {
@@ -1346,6 +1588,41 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "WeatherOptions": {
+        "properties": {
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/CoverageDay"
+            },
+            "title": "Days",
+            "type": "array"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "peril": {
+            "$ref": "#/components/schemas/Peril"
+          },
+          "station": {
+            "$ref": "#/components/schemas/Station"
+          }
+        },
+        "required": [
+          "peril",
+          "station",
+          "days"
+        ],
+        "title": "WeatherOptions",
         "type": "object"
       },
       "WorkerStatus": {
@@ -1391,10 +1668,29 @@
   },
   "openapi": "3.1.0",
   "paths": {
-    "/api/ask": {
-      "post": {
-        "operationId": "ask_api_ask_post",
+    "/api/browse": {
+      "get": {
+        "operationId": "browse_api_browse_get",
         "parameters": [
+          {
+            "in": "query",
+            "name": "topic",
+            "required": true,
+            "schema": {
+              "enum": [
+                "weather",
+                "fuel",
+                "rates",
+                "prices",
+                "tariffs",
+                "sports",
+                "jobs",
+                "other"
+              ],
+              "title": "Topic",
+              "type": "string"
+            }
+          },
           {
             "in": "cookie",
             "name": "hc_business",
@@ -1412,22 +1708,12 @@
             }
           }
         ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AskRequest"
-              }
-            }
-          },
-          "required": true
-        },
         "responses": {
           "200": {
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AskResult"
+                  "$ref": "#/components/schemas/BrowseResult"
                 }
               }
             },
@@ -1444,7 +1730,7 @@
             "description": "Validation Error"
           }
         },
-        "summary": "Ask"
+        "summary": "Browse"
       }
     },
     "/api/businesses": {
@@ -1589,6 +1875,28 @@
         "summary": "Health"
       }
     },
+    "/api/industries": {
+      "get": {
+        "operationId": "industry_list_api_industries_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/IndustryInfo"
+                  },
+                  "title": "Response Industry List Api Industries Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Industry List"
+      }
+    },
     "/api/me": {
       "get": {
         "operationId": "me_api_me_get",
@@ -1679,6 +1987,62 @@
           }
         },
         "summary": "Link Bank"
+      }
+    },
+    "/api/me/city": {
+      "put": {
+        "operationId": "set_city_api_me_city_put",
+        "parameters": [
+          {
+            "in": "cookie",
+            "name": "hc_business",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hc Business"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CityUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Business"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set City"
       }
     },
     "/api/me/topics": {
@@ -1820,6 +2184,28 @@
           }
         },
         "summary": "Ops Settle"
+      }
+    },
+    "/api/perils": {
+      "get": {
+        "operationId": "perils_api_perils_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Peril"
+                  },
+                  "title": "Response Perils Api Perils Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Perils"
       }
     },
     "/api/policies": {
@@ -2037,6 +2423,62 @@
         "summary": "Quote"
       }
     },
+    "/api/search": {
+      "get": {
+        "operationId": "search_api_search_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "hc_business",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hc Business"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Search"
+      }
+    },
     "/api/session": {
       "delete": {
         "operationId": "end_session_api_session_delete",
@@ -2109,6 +2551,66 @@
           }
         },
         "summary": "Topic List"
+      }
+    },
+    "/api/weather": {
+      "get": {
+        "operationId": "weather_api_weather_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "peril",
+            "required": true,
+            "schema": {
+              "enum": [
+                "rain",
+                "heat",
+                "cold"
+              ],
+              "title": "Peril",
+              "type": "string"
+            }
+          },
+          {
+            "in": "cookie",
+            "name": "hc_business",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Hc Business"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeatherOptions"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Weather"
       }
     }
   }

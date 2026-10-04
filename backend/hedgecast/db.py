@@ -172,6 +172,9 @@ class Database:
     def set_topics(self, business_id, topics):
         self.run("UPDATE businesses SET topics = ? WHERE id = ?", (json.dumps(topics), business_id))
 
+    def set_city(self, business_id, city_id):
+        self.run("UPDATE businesses SET city_id = ? WHERE id = ?", (city_id, business_id))
+
     def set_bank(self, business_id, customer_id, account_id):
         self.run(
             "UPDATE businesses SET bank_customer_id = ?, bank_account_id = ? WHERE id = ?",

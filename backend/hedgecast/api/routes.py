@@ -40,6 +40,11 @@ def topic_list(svc=Depends(service)):
     return svc.topic_list()
 
 
+@router.get("/industries", response_model=List[s.IndustryInfo])
+def industry_list(svc=Depends(service)):
+    return svc.industry_list()
+
+
 @router.get("/businesses", response_model=List[s.BusinessListItem])
 def businesses(svc=Depends(service)):
     return svc.list_businesses()
@@ -80,14 +85,37 @@ def set_topics(body: s.TopicsUpdate, bid: int = Depends(business_id), svc=Depend
     return svc.set_topics(bid, body)
 
 
+@router.put("/me/city", response_model=s.Business)
+def set_city(body: s.CityUpdate, bid: int = Depends(business_id), svc=Depends(service)):
+    return svc.set_city(bid, body)
+
+
+@router.get("/perils", response_model=List[s.Peril])
+def perils(svc=Depends(service)):
+    return svc.perils()
+
+
+@router.get("/weather", response_model=s.WeatherOptions)
+def weather(peril: s.PerilId, bid: int = Depends(business_id), svc=Depends(service)):
+    return svc.weather_options(bid, peril)
+
+
+@router.get("/browse", response_model=s.BrowseResult)
+def browse(topic: s.TopicId, bid: int = Depends(business_id), svc=Depends(service)):
+    return svc.browse(bid, topic)
+
+
 @router.get("/forecast", response_model=s.Forecast)
 def forecast(bid: int = Depends(business_id), svc=Depends(service)):
     return svc.forecast(bid)
 
 
-@router.post("/ask", response_model=s.AskResult)
-def ask(body: s.AskRequest, bid: int = Depends(business_id), svc=Depends(service)):
-    return svc.ask(bid, body)
+@router.get("/search", response_model=s.SearchResult)
+def search(q: str = "", bid: int = Depends(business_id), svc=Depends(service)):
+    text = (q or "").strip()
+    if len(text) < 2:
+        raise ServiceError(400, "Type at least 2 characters to search.")
+    return svc.search(bid, text)
 
 
 @router.post("/quotes", response_model=s.Quote)

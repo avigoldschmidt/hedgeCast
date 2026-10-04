@@ -8,7 +8,7 @@ from hedgecast import config
 from hedgecast.db import Database
 from hedgecast.engine.executors import PaperExecutor
 from hedgecast.engine.service import Service
-from hedgecast.fakes import FakeAdvisor, FakeBank, FakeMarketData
+from hedgecast.fakes import FakeBank, FakeMarketData
 from hedgecast.main import create_app
 
 TODAY = date(2026, 10, 4)
@@ -19,7 +19,7 @@ FED_CUT = "KXFEDDECISION-26DEC-C25"
 FED_HOLD = "KXFEDDECISION-26DEC-H0"
 GAS_EVENT = "KXGASPRICE-26OCT31"
 GAS = "KXGASPRICE-26OCT31-T3.50"
-CAFE = "We run a small coffee shop with a sidewalk patio"
+CAFE_INDUSTRY = "Café or coffee shop"
 
 
 class Clock:
@@ -39,14 +39,15 @@ def world(tmp_path):
     db = Database(tmp_path / "hedgecast.db")
     market = FakeMarketData(today=TODAY)
     bank = FakeBank()
-    advisor = FakeAdvisor()
-    service = Service(db, market, bank, PaperExecutor(market, config.MAX_CONTRACT_PRICE), clock=clock, advisor=advisor)
+    service = Service(db, market, bank, PaperExecutor(market, config.MAX_CONTRACT_PRICE), clock=clock)
     client = TestClient(create_app(service, worker=False))
-    return SimpleNamespace(clock=clock, db=db, market=market, bank=bank, advisor=advisor, service=service, client=client)
+    return SimpleNamespace(clock=clock, db=db, market=market, bank=bank, service=service, client=client)
 
 
-def onboard(world, city_id="new-york-ny", link=True, description=CAFE):
-    response = world.client.post("/api/businesses", json={"name": "Corner Cafe", "description": description, "city_id": city_id})
+def onboard(world, city_id="new-york-ny", link=True, industry=CAFE_INDUSTRY):
+    response = world.client.post(
+        "/api/businesses", json={"name": "Corner Cafe", "industry": industry, "city_id": city_id}
+    )
     assert response.status_code == 200, response.text
     if link:
         response = world.client.post("/api/me/bank")

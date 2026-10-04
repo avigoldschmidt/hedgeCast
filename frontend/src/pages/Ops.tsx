@@ -39,8 +39,7 @@ export function Ops() {
         <ErrorNote error={ops.error} />
         {ops.data && (
           <>
-            <Card className="grid grid-cols-2 gap-6 p-6 md:grid-cols-5">
-              <Stat label="Advisor" value={<span className="text-base">{ops.data.advisor}</span>} sub="Profiles and plan wording" />
+            <Card className="grid grid-cols-2 gap-6 p-6 md:grid-cols-4">
               <Stat
                 label="Hedge mode"
                 value={<span className="capitalize">{ops.data.hedge_mode}</span>}

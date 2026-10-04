@@ -16,19 +16,16 @@ def build_service():
 
     db = Database(config.db_path())
     if config.use_fakes():
-        from .fakes import FakeAdvisor, FakeBank, FakeMarketData
+        from .fakes import FakeBank, FakeMarketData
 
-        market_data, bank, advisor = FakeMarketData(), FakeBank(), FakeAdvisor()
+        market_data, bank = FakeMarketData(), FakeBank()
     else:
-        from .advisor import GeminiAdvisor
         from .integrations.market_data import KalshiMarketData
         from .integrations.money import NessieBank
 
         market_data, bank = KalshiMarketData(config.kalshi_data_url()), NessieBank(db)
-        key = config.gemini_api_key()
-        advisor = GeminiAdvisor(key, config.gemini_model()) if key else None
     executor = make_executor(config.hedge_mode(), market_data, config.MAX_CONTRACT_PRICE)
-    return Service(db, market_data, bank, executor, advisor=advisor)
+    return Service(db, market_data, bank, executor)
 
 
 def _worker_loop(service, stop, interval):

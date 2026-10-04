@@ -1,11 +1,10 @@
 import sqlite3
 import threading
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 
 from .. import config, topics, weather
-from ..advisor import AdvisorError, clean_plans, clean_profile, fallback_plans
 from ..api import schemas as s
 from ..errors import ServiceError, bad_request, conflict, not_found, unavailable
 from ..integrations.market_data import MarketDataError, MarketNotFound
@@ -18,16 +17,14 @@ from .settle import Settlement
 OPEN_STATUSES = ("ACTIVE", "AWAITING_RESULT")
 QUOTE_GRACE = timedelta(seconds=5)
 LIKELY = 0.75
-ASK_LIMIT = 3
 
 
 class Service:
-    def __init__(self, db, market_data, bank, executor, clock=None, advisor=None):
+    def __init__(self, db, market_data, bank, executor, clock=None):
         self.db = db
         self.market_data = market_data
         self.bank = bank
         self.executor = executor
-        self.advisor = advisor
         self.clock = clock or (lambda: datetime.now(timezone.utc))
         self.settlement = Settlement(db, market_data, bank, config.PAYOUT_MAX_ATTEMPTS, self.clock)
         self.max_price = Decimal(config.MAX_CONTRACT_PRICE)
@@ -35,7 +32,6 @@ class Service:
         self.last_run_at = None
         self.last_result = None
         self._bind_lock = threading.Lock()
-        self._advice = {}
 
     # Reference data
 
@@ -43,7 +39,13 @@ class Service:
         return [s.City(id=c.id, name=c.name, state=c.state) for c in weather.CITIES]
 
     def topic_list(self):
-        return [s.TopicInfo(id=t.id, name=t.name, blurb=t.blurb) for t in topics.TOPICS]
+        return [s.TopicInfo(id=t.id, name=t.name, blurb=t.blurb) for t in topics.TOPICS + [topics.OTHER]]
+
+    def industry_list(self):
+        return [s.IndustryInfo(name=name) for name in topics.industries()]
+
+    def perils(self):
+        return [s.Peril(id=key, **value) for key, value in weather.PERILS.items()]
 
     # Businesses
 
@@ -54,22 +56,13 @@ class Service:
         ]
 
     def create_business(self, body):
-        place = None
-        if body.city_id:
-            place = weather.city(body.city_id)
-            if place is None:
-                raise bad_request("Choose a city from the list.")
-        description = " ".join(body.description.split())
-        profile = None
-        if self.advisor:
-            try:
-                raw = self.advisor.profile(description, f"{place.name}, {place.state}" if place else None)
-                profile = clean_profile(raw, description)
-            except AdvisorError:
-                profile = None
-        profile = profile or topics.default_profile(description)
+        if body.city_id and weather.city(body.city_id) is None:
+            raise bad_request("Choose a city from the list.")
+        profile = topics.profile_for(body.industry)
+        if profile is None:
+            raise bad_request("Choose an industry from the list.")
         business_id = self.db.create_business(
-            body.name.strip(), description, profile["industry"], body.city_id or None, profile["topics"], profile["bad_day_dollars"]
+            body.name.strip(), "", profile["industry"], body.city_id or None, profile["topics"], profile["bad_day_dollars"]
         )
         return self.get_business(business_id)
 
@@ -79,6 +72,13 @@ class Service:
         if not chosen:
             raise bad_request("Pick at least one thing to watch.")
         self.db.set_topics(business_id, chosen)
+        return self.get_business(business_id)
+
+    def set_city(self, business_id, body):
+        self._business_row(business_id)
+        if weather.city(body.city_id) is None:
+            raise bad_request("Choose a city from the list.")
+        self.db.set_city(business_id, body.city_id)
         return self.get_business(business_id)
 
     def get_business(self, business_id):
@@ -95,52 +95,122 @@ class Service:
             self.db.set_bank(business_id, customer_id, account_id)
         return self.get_business(business_id)
 
+    # Guided browse
+
+    def weather_options(self, business_id, peril):
+        station, km, found = self._weather(self._business_row(business_id), peril)
+        days = {}
+        for trigger in found:
+            days.setdefault(trigger["date"], []).append(
+                s.TriggerOption(
+                    ticker=trigger["ticker"],
+                    label=trigger["label"],
+                    implied_probability=catalog.market_probability(trigger["market"]),
+                )
+            )
+        message = None
+        if not days:
+            message = (
+                f"No {peril} markets are open for {station.name} right now. "
+                "Kalshi lists daily weather markets about a day ahead."
+            )
+        return s.WeatherOptions(
+            peril=s.Peril(id=peril, **weather.PERILS[peril]),
+            station=_station(station, km),
+            days=[s.CoverageDay(date=day, label=_day_label(day), triggers=items) for day, items in sorted(days.items())],
+            message=message,
+        )
+
+    def browse(self, business_id, topic_id):
+        if topic_id == "weather":
+            raise bad_request("Use the weather steps for rain, heat, and cold cover.")
+        if topic_id == "other":
+            raise bad_request("Search for something else instead of browsing a fixed list.")
+        row = self._business_row(business_id)
+        place = weather.city(row["city_id"]) if row["city_id"] else None
+        now = self.clock()
+        try:
+            groups = topics.groups_for(topic_id, self.market_data, place, now, limit=12)
+        except MarketDataError as exc:
+            raise unavailable(f"Live market data is unavailable right now. {exc}") from exc
+        message = None if groups else "Nothing is open for this right now. Try another kind of cover."
+        return s.BrowseResult(
+            topic=topic_id,
+            groups=[
+                s.BrowseGroup(
+                    id=group["id"],
+                    title=group["title"],
+                    settles_on=group["settles_on"],
+                    warning=group.get("warning"),
+                    options=[
+                        s.BrowseOption(
+                            ticker=option["ticker"],
+                            label=option["label"],
+                            chance=option["chance"],
+                            closes_at=option["close_time"],
+                        )
+                        for option in group["options"]
+                    ],
+                )
+                for group in groups
+            ],
+            message=message,
+        )
+
+    def _weather(self, business, peril):
+        if not business["city_id"]:
+            raise conflict("Add your city to see local weather cover.")
+        station, km = weather.nearest_station(weather.city(business["city_id"]), peril)
+        try:
+            found = weather.triggers(self.market_data, peril, station, self.clock())
+        except MarketDataError as exc:
+            raise unavailable(f"Live market data is unavailable right now. {exc}") from exc
+        return station, km, found
+
     # Forecast
 
     def forecast(self, business_id):
         row = self._business_row(business_id)
         place = weather.city(row["city_id"]) if row["city_id"] else None
         groups = self._candidate_groups(row["topics"], place)
-        plans, tailored = self._curated(row, groups)
+        plans = topics.fallback_plans(groups)
         by_id = {group["id"]: group for group in groups}
         cards = sorted((self._card(by_id[plan["group"]], plan) for plan in plans), key=lambda card: card.closes_at)
         note = None
         if "weather" in row["topics"] and place is None:
-            note = "Add your city to see the weather where you are."
+            note = "Add your city above to see local weather cover."
         elif not cards:
-            note = "Nothing is open for what you watch right now. Try watching something else or ask below."
-        return s.Forecast(cards=cards, tailored=tailored, note=note)
+            note = "Nothing is open for what you watch right now. Try another topic, or search for cover."
+        return s.Forecast(cards=cards, note=note)
 
-    def ask(self, business_id, body):
-        row = self._business_row(business_id)
-        place = weather.city(row["city_id"]) if row["city_id"] else None
-        text = " ".join(body.text.split())
+    def search(self, business_id, query):
+        """Plain filter over open Kalshi events — same catalog the rest of the app uses."""
+        self._business_row(business_id)
+        text = " ".join(query.split())
         now = self.clock()
         try:
-            groups = topics.search_groups(self.market_data.open_events(), text, now)
-            if place and topics.mentions_weather(text):
-                groups = topics.weather_groups(self.market_data, place, now) + groups
+            events = self.market_data.open_events()
         except MarketDataError as exc:
             raise unavailable(f"Live market data is unavailable right now. {exc}") from exc
 
-        plans, message = None, ""
-        if self.advisor and groups:
-            try:
-                raw = self.advisor.ask(_advisor_view(row, place), text, groups)
-                plans = clean_plans(raw.get("plans"), groups, per_topic=ASK_LIMIT)[:ASK_LIMIT]
-                message = raw.get("message") if isinstance(raw.get("message"), str) else ""
-            except AdvisorError:
-                plans = None
-        if plans is None:
-            plans = fallback_plans(groups, per_topic=ASK_LIMIT)[:ASK_LIMIT]
-        if not message.strip():
-            message = (
-                "Here's what Kalshi lists for that."
-                if plans
-                else "No market covers that yet. Try naming the event, like rain, gas prices, or a Fed decision."
-            )
+        _categories, hits = catalog.search(events, query=text, now=now, limit=12)
+        by_ticker = {event["event_ticker"]: event for event in events}
+        groups = []
+        for hit in hits:
+            event = by_ticker.get(hit["event_ticker"])
+            if event is None:
+                continue
+            group = topics.event_group(event, topics.topic_for_event(event), now)
+            if group:
+                groups.append(group)
+        plans = topics.fallback_plans(groups, per_topic=12)[:12]
         by_id = {group["id"]: group for group in groups}
-        return s.AskResult(cards=[self._card(by_id[plan["group"]], plan) for plan in plans], message=" ".join(message.split())[:240])
+        cards = [self._card(by_id[plan["group"]], plan) for plan in plans]
+        if cards:
+            message = f"{len(cards)} Kalshi market{'s' if len(cards) != 1 else ''} matching “{text}”."
+        else:
+            message = "No open Kalshi markets match that."
+        return s.SearchResult(cards=cards, message=message)
 
     def _candidate_groups(self, topic_ids, place):
         now = self.clock()
@@ -155,27 +225,6 @@ class Service:
         if errors and not groups:
             raise unavailable(f"Live market data is unavailable right now. {errors[0]}")
         return groups
-
-    def _curated(self, row, groups):
-        """The advisor's picks for these candidates, cached per business. Falls back to plain plans written by code."""
-        if not groups:
-            return [], self.advisor is not None
-        now = self.clock()
-        key = (row["id"], tuple(sorted(group["id"] for group in groups)))
-        cached = self._advice.get(key)
-        raw = None
-        if cached and (now - cached[0]).total_seconds() < config.FORECAST_CACHE_SECONDS:
-            raw = cached[1]
-        elif self.advisor:
-            try:
-                raw = self.advisor.curate(_advisor_view(row, weather.city(row["city_id"]) if row["city_id"] else None), groups)
-                self._advice[key] = (now, raw)
-            except AdvisorError:
-                raw = None
-        plans = clean_plans(raw, groups) if raw is not None else []
-        if not plans:
-            return fallback_plans(groups), False
-        return plans, True
 
     def _card(self, group, plan):
         option = next(o for o in group["options"] if o["ticker"] == plan["ticker"])
@@ -439,7 +488,6 @@ class Service:
         return s.OpsOverview(
             hedge_mode=self.executor.mode,
             data_source=self.market_data.source,
-            advisor=self.advisor.name if self.advisor else "Off · plain wording",
             reserve_balance_cents=reserve,
             reserve_error=reserve_error,
             worker=s.WorkerStatus(enabled=self.worker_enabled, last_run_at=self.last_run_at, last_result=self.last_result),
@@ -545,13 +593,19 @@ def _city(city_id):
     return s.City(id=place.id, name=place.name, state=place.state) if place else None
 
 
-def _advisor_view(row, place):
-    return {
-        "name": row["name"],
-        "description": row["description"],
-        "industry": row["industry"],
-        "location": f"{place.name}, {place.state}" if place else None,
-    }
+def _station(station, km):
+    risk = weather.basis_risk(km)
+    return s.Station(
+        code=station.code,
+        name=station.name,
+        distance_km=round(km),
+        basis_risk=risk,
+        basis_note=weather.BASIS_NOTES[risk],
+    )
+
+
+def _day_label(iso_day):
+    return date.fromisoformat(iso_day).strftime("%a, %b %-d")
 
 
 def _title(events):

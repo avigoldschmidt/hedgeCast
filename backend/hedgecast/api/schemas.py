@@ -5,6 +5,8 @@ from typing_extensions import Literal
 
 Side = Literal["yes", "no"]
 TopicId = Literal["weather", "fuel", "rates", "prices", "tariffs", "sports", "jobs", "other"]
+PerilId = Literal["rain", "heat", "cold"]
+BasisRisk = Literal["low", "medium", "high"]
 PolicyStatus = Literal["PENDING", "ACTIVE", "AWAITING_RESULT", "PAID", "EXPIRED", "REFUNDED", "NEEDS_REVIEW"]
 
 
@@ -21,6 +23,10 @@ class TopicInfo(BaseModel):
     id: TopicId
     name: str
     blurb: str
+
+
+class IndustryInfo(BaseModel):
+    name: str
 
 
 class BankLink(BaseModel):
@@ -51,12 +57,16 @@ class BusinessListItem(BaseModel):
 
 class CreateBusiness(BaseModel):
     name: str = Field(min_length=1, max_length=80)
-    description: str = Field(min_length=3, max_length=300)
+    industry: str = Field(min_length=1, max_length=80)
     city_id: Optional[str] = None
 
 
 class TopicsUpdate(BaseModel):
     topics: List[TopicId] = Field(min_length=1, max_length=7)
+
+
+class CityUpdate(BaseModel):
+    city_id: str = Field(min_length=1, max_length=80)
 
 
 class SessionRequest(BaseModel):
@@ -90,17 +100,72 @@ class PlanCard(BaseModel):
 
 class Forecast(BaseModel):
     cards: List[PlanCard]
-    tailored: bool
     note: Optional[str] = None
 
 
-class AskRequest(BaseModel):
-    text: str = Field(min_length=3, max_length=300)
-
-
-class AskResult(BaseModel):
+class SearchResult(BaseModel):
     cards: List[PlanCard]
     message: str
+
+
+# Weather wizard
+
+
+class Peril(BaseModel):
+    id: PerilId
+    name: str
+    description: str
+
+
+class Station(BaseModel):
+    code: str
+    name: str
+    distance_km: int
+    basis_risk: BasisRisk
+    basis_note: str
+
+
+class TriggerOption(BaseModel):
+    ticker: str
+    label: str
+    implied_probability: Optional[float] = None
+
+
+class CoverageDay(BaseModel):
+    date: str
+    label: str
+    triggers: List[TriggerOption]
+
+
+class WeatherOptions(BaseModel):
+    peril: Peril
+    station: Station
+    days: List[CoverageDay]
+    message: Optional[str] = None
+
+
+# Topic browse
+
+
+class BrowseOption(BaseModel):
+    ticker: str
+    label: str
+    chance: Optional[float] = None
+    closes_at: str
+
+
+class BrowseGroup(BaseModel):
+    id: str
+    title: str
+    settles_on: str
+    warning: Optional[str] = None
+    options: List[BrowseOption]
+
+
+class BrowseResult(BaseModel):
+    topic: TopicId
+    groups: List[BrowseGroup]
+    message: Optional[str] = None
 
 
 # Quotes
@@ -239,7 +304,6 @@ class OpsPolicy(PolicySummary):
 class OpsOverview(BaseModel):
     hedge_mode: str
     data_source: str
-    advisor: str
     reserve_balance_cents: Optional[int] = None
     reserve_error: Optional[str] = None
     worker: WorkerStatus

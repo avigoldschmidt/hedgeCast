@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, Clock, Lock, RefreshCw } from 'lucide-react'
+import { AlertTriangle, Clock, Landmark, Lock, RefreshCw } from 'lucide-react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import { api, type S } from '@/api/client'
@@ -78,6 +78,11 @@ export function QuoteCheckout({ request, onPayout }: { request: S['QuoteRequest'
     },
   })
 
+  const link = useMutation({
+    mutationFn: api.linkBank,
+    onSuccess: (data) => queryClient.setQueryData(['me'], data),
+  })
+
   const q = quote.data
   const bankLinked = me.data?.bank.linked ?? false
   const secondsLeft = useSecondsLeft(q?.expires_at)
@@ -85,7 +90,7 @@ export function QuoteCheckout({ request, onPayout }: { request: S['QuoteRequest'
   const short = q?.thin_book.short ?? false
   const canBuy = q !== null && !expired && bankLinked && !bind.isPending && (!short || allOrNothing)
 
-  if (!request) return <p className="text-sm text-muted">Pick what happens and an amount to see a price.</p>
+  if (!request) return <p className="text-sm text-muted">Pick an outcome and payout to see a price.</p>
   if (quote.error != null) {
     return (
       <div className="space-y-3">
@@ -106,6 +111,9 @@ export function QuoteCheckout({ request, onPayout }: { request: S['QuoteRequest'
   }
 
   const leg = q.legs[0]
+  const feeTotal =
+    q.breakdown.exchange_fee_cents + q.breakdown.buffer_cents + q.breakdown.platform_fee_cents + q.breakdown.rounding_cents
+
   return (
     <div className={cn('transition-opacity', (expired || quote.loading) && 'opacity-50')}>
       <div className="flex items-baseline justify-between gap-3">
@@ -125,15 +133,17 @@ export function QuoteCheckout({ request, onPayout }: { request: S['QuoteRequest'
       </div>
       <p className="mt-1 text-sm text-ink-soft">
         Pays <strong className="num">{money(q.payout_each_cents)}</strong> into checking if {leg.side === 'yes' ? 'it happens' : "it doesn't happen"}.
-        The market puts that at <strong className="num">{pct(leg.implied_probability)}</strong>.
+        Market chance <strong className="num">{pct(leg.implied_probability)}</strong>
+        {feeTotal > 0 && (
+          <>
+            {' '}
+            · includes <span className="num">{money(feeTotal)}</span> in fees
+          </>
+        )}
+        .
       </p>
 
-      {q.catch && (
-        <div className="mt-4 rounded-xl bg-canvas px-4 py-3 text-sm leading-relaxed text-ink-soft">
-          <div className="mb-0.5 text-xs font-semibold tracking-wide text-muted uppercase">The catch</div>
-          {q.catch}
-        </div>
-      )}
+      {q.catch && <p className="mt-3 text-sm leading-relaxed text-ink-soft">{q.catch}</p>}
 
       {q.warnings.map((warning) => (
         <Warning key={warning}>{warning}</Warning>
@@ -149,19 +159,23 @@ export function QuoteCheckout({ request, onPayout }: { request: S['QuoteRequest'
         />
       )}
 
-      <details className="mt-3 rounded-xl border border-line text-sm">
-        <summary className="cursor-pointer list-none px-4 py-2.5 font-medium text-ink-soft">Exact terms and how the price is built</summary>
-        <div className="space-y-3 border-t border-line px-4 py-3">
-          <p className="leading-relaxed text-ink-soft">{q.terms}</p>
-          <dl className="space-y-1">
-            <Line label="Market cost of cover" cents={q.breakdown.hedge_cost_cents} />
-            <Line label="Exchange fees" cents={q.breakdown.exchange_fee_cents} />
-            <Line label="Execution buffer" cents={q.breakdown.buffer_cents} />
-            <Line label="HedgeCast fee" cents={q.breakdown.platform_fee_cents} />
-            <Line label="Rounded to whole dollars" cents={q.breakdown.rounding_cents} />
-          </dl>
+      {!bankLinked && (
+        <div className="mt-4 rounded-xl border border-line bg-canvas px-4 py-4">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-brand-soft text-brand">
+              <Landmark className="size-4" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-medium">Link checking to protect</div>
+              <p className="mt-0.5 text-xs text-muted">Cover is paid from this account and payouts land back in it.</p>
+              <ErrorNote error={link.error} />
+              <Button size="sm" className="mt-3" onClick={() => link.mutate()} disabled={link.isPending}>
+                {link.isPending ? 'Connecting…' : 'Connect checking'}
+              </Button>
+            </div>
+          </div>
         </div>
-      </details>
+      )}
 
       <ErrorNote error={bind.error} />
       <Button
@@ -173,7 +187,9 @@ export function QuoteCheckout({ request, onPayout }: { request: S['QuoteRequest'
         {bind.isPending ? 'Setting up your cover…' : `Protect for ${money(q.premium_cents)}`}
       </Button>
       <p className="mt-2 text-center text-xs text-muted">
-        {bankLinked ? `Charged to checking ••${me.data?.bank.account_mask}. Payouts go back to it automatically.` : 'Connect checking first.'}
+        {bankLinked
+          ? `Charged to checking ••${me.data?.bank.account_mask}. Payouts go back automatically.`
+          : 'Connect checking above to protect.'}
       </p>
     </div>
   )
@@ -216,15 +232,6 @@ function useSecondsLeft(expiresAt: string | undefined) {
   }, [])
   if (!expiresAt) return 0
   return Math.max(0, Math.ceil((new Date(expiresAt).getTime() - now) / 1000))
-}
-
-function Line({ label, cents }: { label: string; cents: number }) {
-  return (
-    <div className="flex justify-between text-ink-soft">
-      <dt>{label}</dt>
-      <dd className="num">{money(cents)}</dd>
-    </div>
-  )
 }
 
 function ThinBookPanel({
