@@ -259,7 +259,10 @@ class PolicyLeg(BaseModel):
     label: str
     contracts: int
     fill_price: Optional[str] = None
+    limit_price: Optional[str] = None
     cost_cents: int
+    fee_cents: int = 0
+    order_id: Optional[str] = None
     simulated: bool
     result: Optional[str] = None
     close_time: str
@@ -300,6 +303,7 @@ class OpsPolicy(PolicySummary):
     business_name: str
     simulated: bool
     covered_side: Literal["yes", "no", "mixed"]
+    legs: List[PolicyLeg] = []
 
 
 class OpsOverview(BaseModel):

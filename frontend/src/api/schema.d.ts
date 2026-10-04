@@ -577,6 +577,11 @@ export interface components {
             created_at: string;
             /** Id */
             id: number;
+            /**
+             * Legs
+             * @default []
+             */
+            legs: components["schemas"]["PolicyLeg"][];
             /** Max Payout Cents */
             max_payout_cents: number;
             /** Paid Cents */
@@ -723,10 +728,19 @@ export interface components {
             contracts: number;
             /** Cost Cents */
             cost_cents: number;
+            /**
+             * Fee Cents
+             * @default 0
+             */
+            fee_cents: number;
             /** Fill Price */
             fill_price?: string | null;
             /** Label */
             label: string;
+            /** Limit Price */
+            limit_price?: string | null;
+            /** Order Id */
+            order_id?: string | null;
             /** Result */
             result?: string | null;
             /**

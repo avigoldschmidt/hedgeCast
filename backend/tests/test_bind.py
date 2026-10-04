@@ -19,6 +19,9 @@ def test_happy_path_charges_once_and_hedges(world):
     assert _checking(world) == OPENING - quote["premium_cents"]
     leg = policy["legs"][0]
     assert leg["simulated"] and leg["fill_price"] and leg["cost_cents"] > 0
+    assert leg["limit_price"] and leg["fee_cents"] > 0 and leg["order_id"].startswith("paper-")
+    hedged = next(e for e in policy["events"] if e["kind"] == "hedged")
+    assert "paper" in hedged["message"].lower() and leg["order_id"] in hedged["message"]
     assert [(m["kind"], m["status"]) for m in policy["movements"]] == [("premium", "done")]
     kinds = [e["kind"] for e in policy["events"]]
     assert kinds == ["created", "premium_charged", "hedged", "active"]

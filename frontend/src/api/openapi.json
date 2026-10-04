@@ -628,6 +628,14 @@
             "title": "Id",
             "type": "integer"
           },
+          "legs": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/PolicyLeg"
+            },
+            "title": "Legs",
+            "type": "array"
+          },
           "max_payout_cents": {
             "title": "Max Payout Cents",
             "type": "integer"
@@ -1015,6 +1023,11 @@
             "title": "Cost Cents",
             "type": "integer"
           },
+          "fee_cents": {
+            "default": 0,
+            "title": "Fee Cents",
+            "type": "integer"
+          },
           "fill_price": {
             "anyOf": [
               {
@@ -1029,6 +1042,28 @@
           "label": {
             "title": "Label",
             "type": "string"
+          },
+          "limit_price": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Limit Price"
+          },
+          "order_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Id"
           },
           "result": {
             "anyOf": [

@@ -14,6 +14,9 @@ def test_paper_fill_uses_the_book():
     leg = dict(LEG, ticker=next(t for t in market.markets if t.startswith("KXRAIN")))
     [fill] = PaperExecutor(market, "0.97").execute([leg])
     assert fill["fill_price"] == "0.3100"
+    assert fill["limit_price"] == "0.3200"  # worst level walked; avg fill can be tighter
+    assert fill["fee_cents"] > 0
+    assert fill["cost_cents"] > fill["fee_cents"]
     assert fill["order_id"].startswith("paper-")
 
 

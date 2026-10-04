@@ -201,4 +201,6 @@ def test_ops_overview_and_manual_settle(world):
     assert body["worker"]["last_run_at"]
     assert body["policies"][0]["simulated"] is True
     assert body["policies"][0]["covered_side"] == "yes"
+    ticket = body["policies"][0]["legs"][0]
+    assert ticket["order_id"].startswith("paper-") and ticket["limit_price"] and ticket["fee_cents"] > 0
     assert body["reserve_balance_cents"] > 0

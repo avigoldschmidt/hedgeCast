@@ -402,12 +402,13 @@ class Service:
             self.db.update_leg(
                 leg["id"],
                 fill_price=fill["fill_price"],
+                limit_price=fill["limit_price"],
+                fee_cents=fill["fee_cents"],
                 cost_cents=fill["cost_cents"],
                 order_id=fill["order_id"],
                 simulated=1 if self.executor.simulated else 0,
             )
-        how = "simulated against the live order book" if self.executor.simulated else "on Kalshi"
-        self.db.add_event(policy_id, "hedged", f"Backing contracts bought {how}.")
+        self.db.add_event(policy_id, "hedged", _hedge_event(fills, self.executor.simulated))
         self.db.transition(policy_id, ["PENDING"], "ACTIVE", "active", "Cover is active. We'll watch for Kalshi's official result.")
         return self.get_policy(business_id, policy_id)
 
@@ -491,6 +492,7 @@ class Service:
                     business_name=businesses.get(row["business_id"], ""),
                     simulated=any(leg["simulated"] for leg in legs),
                     covered_side=covered_side,
+                    legs=[_policy_leg(leg) for leg in legs],
                 )
             )
         return s.OpsOverview(
@@ -572,20 +574,7 @@ class Service:
             why=row["why"],
             catch=row["catch"],
             terms=row["terms"],
-            legs=[
-                s.PolicyLeg(
-                    ticker=leg["ticker"],
-                    side=leg["side"],
-                    label=leg["label"],
-                    contracts=leg["contracts"],
-                    fill_price=leg["fill_price"],
-                    cost_cents=leg["cost_cents"],
-                    simulated=bool(leg["simulated"]),
-                    result=leg["result"],
-                    close_time=leg["close_time"],
-                )
-                for leg in legs
-            ],
+            legs=[_policy_leg(leg) for leg in legs],
             events=[s.PolicyEvent(kind=e["kind"], message=e["message"], created_at=e["created_at"]) for e in self.db.events(row["id"])],
             movements=[
                 s.MoneyMovement(
@@ -628,3 +617,34 @@ def _terms(payout_cents, legs):
         f"HedgeCast pays {dollars(payout_cents)} into your checking account {scope}, "
         f"according to Kalshi's official result: {outcomes}. No claim to file. Payment goes out automatically."
     )
+
+
+def _policy_leg(leg):
+    return s.PolicyLeg(
+        ticker=leg["ticker"],
+        side=leg["side"],
+        label=leg["label"],
+        contracts=leg["contracts"],
+        fill_price=leg["fill_price"],
+        limit_price=leg["limit_price"],
+        cost_cents=leg["cost_cents"],
+        fee_cents=leg["fee_cents"] or 0,
+        order_id=leg["order_id"],
+        simulated=bool(leg["simulated"]),
+        result=leg["result"],
+        close_time=leg["close_time"],
+    )
+
+
+def _cents_label(price):
+    return f"{(Decimal(price) * 100).quantize(Decimal('0.1'))}¢"
+
+
+def _hedge_event(fills, simulated):
+    where = "against the live order book (paper)" if simulated else "on Kalshi"
+    parts = [
+        f"{fill['order_id']} limit {_cents_label(fill['limit_price'])} "
+        f"avg fill {_cents_label(fill['fill_price'])} fee {dollars(fill['fee_cents'])}"
+        for fill in fills
+    ]
+    return f"Backing contracts bought {where}. " + "; ".join(parts) + "."

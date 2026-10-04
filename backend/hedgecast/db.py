@@ -61,7 +61,9 @@ CREATE TABLE IF NOT EXISTS policy_legs (
     contracts INTEGER NOT NULL,
     cost_ceiling_cents INTEGER NOT NULL,
     fill_price TEXT,
+    limit_price TEXT,
     cost_cents INTEGER NOT NULL DEFAULT 0,
+    fee_cents INTEGER NOT NULL DEFAULT 0,
     simulated INTEGER NOT NULL DEFAULT 1,
     order_id TEXT,
     close_time TEXT NOT NULL,
@@ -101,7 +103,7 @@ def now_iso():
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 DATA_TABLES = ("money_movements", "policy_events", "policy_legs", "policies", "quotes", "businesses")
 
 

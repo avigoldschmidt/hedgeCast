@@ -15,6 +15,12 @@ export function money(cents: number) {
   }).format(cents / 100)
 }
 
+/** Kalshi contract price string (dollars) → display cents, e.g. "0.3100" → "31.0¢". */
+export function contractCents(price: string | null | undefined) {
+  if (price == null || price === '') return '—'
+  return `${(Number(price) * 100).toFixed(1)}¢`
+}
+
 export function pct(value: number) {
   return `${Math.round(value * 100)}%`
 }

@@ -5,7 +5,7 @@ import { Link, useLocation, useParams } from 'react-router'
 import { api, type PolicyStatus, type S } from '@/api/client'
 import { ErrorNote, Loading, StatusBadge, TopicIcon } from '@/components/domain'
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/card'
-import { cn, dateTime, money } from '@/lib/format'
+import { cn, contractCents, dateTime, money } from '@/lib/format'
 import { OPEN_STATUSES } from '@/lib/status'
 
 const REACHED: Record<PolicyStatus, number> = {
@@ -146,9 +146,12 @@ export function PolicyPage() {
               <thead className="text-left text-xs text-muted uppercase">
                 <tr>
                   <th className="pb-2 font-medium">Market</th>
-                  <th className="pb-2 font-medium">Pays if</th>
-                  <th className="pb-2 font-medium">Contracts</th>
-                  <th className="pb-2 font-medium">Fill</th>
+                  <th className="pb-2 font-medium">Side</th>
+                  <th className="pb-2 text-right font-medium">Qty</th>
+                  <th className="pb-2 text-right font-medium">Limit</th>
+                  <th className="pb-2 text-right font-medium">Fill</th>
+                  <th className="pb-2 text-right font-medium">Fee</th>
+                  <th className="pb-2 font-medium">Order</th>
                   <th className="pb-2 font-medium">Result</th>
                 </tr>
               </thead>
@@ -160,8 +163,16 @@ export function PolicyPage() {
                       <div className="font-mono text-xs text-muted">{leg.ticker}</div>
                     </td>
                     <td className="py-2 uppercase">{leg.side}</td>
-                    <td className="py-2">{leg.contracts.toLocaleString()}</td>
-                    <td className="py-2">{leg.fill_price ? `${(Number(leg.fill_price) * 100).toFixed(1)}¢` : '—'}</td>
+                    <td className="py-2 text-right">{leg.contracts.toLocaleString()}</td>
+                    <td className="py-2 text-right">{contractCents(leg.limit_price)}</td>
+                    <td className="py-2 text-right">{contractCents(leg.fill_price)}</td>
+                    <td className="py-2 text-right">{leg.fee_cents ? money(leg.fee_cents) : '—'}</td>
+                    <td className="py-2">
+                      <div className="font-mono text-xs">{leg.order_id ?? '—'}</div>
+                      {leg.simulated && leg.order_id && (
+                        <div className="font-sans text-[11px] text-muted">Paper · live book</div>
+                      )}
+                    </td>
                     <td className="py-2 uppercase">{leg.result ?? '—'}</td>
                   </tr>
                 ))}
