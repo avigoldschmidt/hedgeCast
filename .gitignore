@@ -1,0 +1,8 @@
+.env
+secrets/
+*.pem
+*.key
+hedgecast.db
+__pycache__/
+.venv/
+.pytest_cache/

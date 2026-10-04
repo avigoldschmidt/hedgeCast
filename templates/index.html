@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Businesses · HedgeCast{% endblock %}
+{% block body %}
+<section class="sheet">
+  <p class="kicker">Book</p>
+  <h1>Businesses</h1>
+  {% if not bank_ready or not kalshi_ready %}
+    <p class="banner">
+      {% if not bank_ready %}Bank is not configured. Accounts cannot be linked yet.{% endif %}
+      {% if not kalshi_ready %}Kalshi key missing. Market prices still load. Orders wait for the key.{% endif %}
+    </p>
+  {% endif %}
+  {% if businesses %}
+    <ul class="roster">
+      {% for business in businesses %}
+        <li>
+          <a href="{{ url_for('business', business_id=business.id) }}">
+            <strong>{{ business.name }}</strong>
+            <span>{{ business.description }} · {{ business.city }}</span>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty">No businesses yet. The first profile is the first page of the book.</p>
+  {% endif %}
+</section>
+<section class="sheet">
+  <h2>New profile</h2>
+  <form method="post" action="{{ url_for('create_business_route') }}" class="stack">
+    <label>Name <input name="name" required maxlength="80" autocomplete="organization"></label>
+    <label>What they sell <input name="description" required maxlength="120" placeholder="Iced drinks and pastry"></label>
+    <label>City <input name="city" required maxlength="60"></label>
+    <button type="submit">Add business</button>
+  </form>
+</section>
+{% endblock %}

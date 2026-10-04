@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "HedgeCast",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "flask",
+      "args": ["--app", "app", "run", "--debug", "--port", "5055"],
+      "jinja": true,
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "FLASK_APP": "app"
+      }
+    }
+  ]
+}
